@@ -718,7 +718,7 @@
               </div>
 
               <!-- Data Sources -->
-              <div class="card clickable-card" id="datasources-card">
+              <div class="card clickable-card" id="datasources-card" data-card-paginator='{"search":"ds-search","filter":"ds-filter","filterAttr":"data-source","list":"card-datasources-list","label":"ds-page-label","prev":"ds-prev-btn","next":"ds-next-btn","itemSel":".datasource-item","nameSel":".datasource-name","perPage":5}'>
                 <div class="card-header">
                   <div class="card-title">Data Sources</div>
                   <div class="connect-btn">+ Connect</div>
@@ -750,7 +750,7 @@
               </div>
 
               <!-- Tools -->
-              <div class="card clickable-card" id="tools-card">
+              <div class="card clickable-card" id="tools-card" data-card-paginator='{"search":"tools-search","filter":"tools-filter","filterAttr":"data-type","list":"card-tools-list","label":"tools-page-label","prev":"tools-prev-btn","next":"tools-next-btn","itemSel":".tool-item","nameSel":".tool-name","perPage":5}'>
                 <div class="card-header">
                   <div class="card-title">Tools</div>
                 </div>
@@ -869,7 +869,7 @@
               </div>
 
               <!-- Procedures -->
-              <div class="card clickable-card" id="procedures-card">
+              <div class="card clickable-card" id="procedures-card" data-card-paginator='{"search":"procs-search","filter":"procs-filter","filterAttr":"data-status","list":"card-procs-list","label":"procs-page-label","prev":"procs-prev-btn","next":"procs-next-btn","itemSel":".procedure-item","nameSel":".procedure-name","perPage":5}'>
                 <div class="card-header">
                   <div class="card-title">Procedures</div>
                 </div>
@@ -2082,8 +2082,8 @@ If no tracking → explain and offer alternative assistance</textarea>
         document.getElementById('detail-panel').classList.add('active');
       }
       document.getElementById('card-edit-proc-top').addEventListener('click', openProcEdit);
-      document.querySelector('[data-card-proc="0" data-status="Enabled"]').addEventListener('click', openProcEdit);
-      document.querySelector('[data-card-proc="0" data-status="Enabled"]').style.cursor = 'pointer';
+      document.querySelector('[data-card-proc="0"]').addEventListener('click', openProcEdit);
+      document.querySelector('[data-card-proc="0"]').style.cursor = 'pointer';
 
       // Back from procedure edit to procedures list
       document.getElementById('proc-edit-back').addEventListener('click', function(e) {
@@ -2092,165 +2092,63 @@ If no tracking → explain and offer alternative assistance</textarea>
         document.getElementById('procedures-detail').style.display = 'block';
       });
 
-      // Tools card pagination
-      (function() {
-        var perPage = 5;
-        var currentPage = 0;
-        var items = document.querySelectorAll('#card-tools-list .tool-item');
-        var total = items.length;
-        var totalPages = Math.ceil(total / perPage);
-        var prevBtn = document.getElementById('tools-prev-btn');
-        var nextBtn = document.getElementById('tools-next-btn');
-        var label = document.getElementById('tools-page-label');
+      // Card search + filter + pagination
+      window._cardPagers = {};
+      document.querySelectorAll('[data-card-paginator]').forEach(function(container) {
+        var cfg = JSON.parse(container.getAttribute('data-card-paginator'));
+        var pager = { page: 0, cfg: cfg };
+        window._cardPagers[cfg.list] = pager;
 
-        function renderPage() {
-          var start = currentPage * perPage;
-          var end = Math.min(start + perPage, total);
-          items.forEach(function(item, i) {
-            item.style.display = (i >= start && i < end) ? '' : 'none';
+        pager.run = function() {
+          var listEl = document.getElementById(cfg.list);
+          var searchInput = document.getElementById(cfg.search);
+          var filterSelect = cfg.filter ? document.getElementById(cfg.filter) : null;
+          var label = document.getElementById(cfg.label);
+          var prevBtn = document.getElementById(cfg.prev);
+          var nextBtn = document.getElementById(cfg.next);
+          var perPage = cfg.perPage || 5;
+
+          var allItems = Array.from(listEl.querySelectorAll(cfg.itemSel));
+          var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+          var fv = filterSelect ? filterSelect.value : '';
+
+          var filtered = allItems.filter(function(item) {
+            var nameEl = item.querySelector(cfg.nameSel);
+            var nameText = nameEl ? nameEl.textContent.toLowerCase() : '';
+            var ok1 = !query || nameText.indexOf(query) !== -1;
+            var ok2 = !fv || item.getAttribute(cfg.filterAttr) === fv;
+            return ok1 && ok2;
           });
-          label.textContent = (start + 1) + '-' + end + ' of ' + total;
-          prevBtn.disabled = currentPage === 0;
-          prevBtn.style.color = currentPage === 0 ? '#d1d5db' : '#374151';
-          nextBtn.disabled = currentPage >= totalPages - 1;
-          nextBtn.style.color = currentPage >= totalPages - 1 ? '#d1d5db' : '#374151';
-        }
 
-        prevBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          if (currentPage > 0) { currentPage--; renderPage(); }
-        });
-        nextBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
-        });
-
-        renderPage();
-      })();
-
-      // Data sources card pagination
-      (function() {
-        var perPage = 5;
-        var currentPage = 0;
-        var items = document.querySelectorAll('#card-datasources-list .datasource-item');
-        var total = items.length;
-        var totalPages = Math.ceil(total / perPage);
-        var prevBtn = document.getElementById('ds-prev-btn');
-        var nextBtn = document.getElementById('ds-next-btn');
-        var label = document.getElementById('ds-page-label');
-
-        function renderPage() {
-          var start = currentPage * perPage;
-          var end = Math.min(start + perPage, total);
-          items.forEach(function(item, i) {
-            item.style.display = (i >= start && i < end) ? '' : 'none';
-          });
-          label.textContent = (start + 1) + '-' + end + ' of ' + total;
-          prevBtn.disabled = currentPage === 0;
-          prevBtn.style.color = currentPage === 0 ? '#d1d5db' : '#374151';
-          nextBtn.disabled = currentPage >= totalPages - 1;
-          nextBtn.style.color = currentPage >= totalPages - 1 ? '#d1d5db' : '#374151';
-        }
-
-        prevBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          if (currentPage > 0) { currentPage--; renderPage(); }
-        });
-        nextBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
-        });
-
-        renderPage();
-      })();
-
-      // Procedures card pagination
-      (function() {
-        var perPage = 5;
-        var currentPage = 0;
-        var items = document.querySelectorAll('#card-procs-list .procedure-item');
-        var total = items.length;
-        var totalPages = Math.ceil(total / perPage);
-        var prevBtn = document.getElementById('procs-prev-btn');
-        var nextBtn = document.getElementById('procs-next-btn');
-        var label = document.getElementById('procs-page-label');
-
-        function renderPage() {
-          var start = currentPage * perPage;
-          var end = Math.min(start + perPage, total);
-          items.forEach(function(item, i) {
-            item.style.display = (i >= start && i < end) ? '' : 'none';
-          });
-          label.textContent = (start + 1) + '-' + end + ' of ' + total;
-          prevBtn.disabled = currentPage === 0;
-          prevBtn.style.color = currentPage === 0 ? '#d1d5db' : '#374151';
-          nextBtn.disabled = currentPage >= totalPages - 1;
-          nextBtn.style.color = currentPage >= totalPages - 1 ? '#d1d5db' : '#374151';
-        }
-
-        prevBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          if (currentPage > 0) { currentPage--; renderPage(); }
-        });
-        nextBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
-        });
-
-        renderPage();
-      })();
-
-      // Card search functionality
-      function setupCardSearchFilter(searchId, filterId, filterAttr, listId, labelId, prevId, nextId, itemSelector, nameSelector, perPage) {
-        var searchInput = document.getElementById(searchId);
-        var filterSelect = filterId ? document.getElementById(filterId) : null;
-        var items = Array.from(document.querySelectorAll('#' + listId + ' ' + itemSelector));
-        var label = document.getElementById(labelId);
-        var prevBtn = document.getElementById(prevId);
-        var nextBtn = document.getElementById(nextId);
-        var currentPage = 0;
-
-        function getFilteredItems() {
-          var query = searchInput.value.toLowerCase().trim();
-          var filterVal = filterSelect ? filterSelect.value : '';
-          return items.filter(function(item) {
-            var name = item.querySelector(nameSelector);
-            var matchesSearch = !query || (name && name.textContent.toLowerCase().indexOf(query) !== -1);
-            var matchesFilter = !filterVal || (item.getAttribute(filterAttr) === filterVal);
-            return matchesSearch && matchesFilter;
-          });
-        }
-
-        function render() {
-          var filtered = getFilteredItems();
           var total = filtered.length;
-          var totalPages = Math.ceil(total / perPage) || 1;
-          if (currentPage >= totalPages) currentPage = totalPages - 1;
-          if (currentPage < 0) currentPage = 0;
-          var start = currentPage * perPage;
-          var end = Math.min(start + perPage, total);
+          var pages = Math.ceil(total / perPage) || 1;
+          if (pager.page >= pages) pager.page = pages - 1;
+          if (pager.page < 0) pager.page = 0;
+          var s = pager.page * perPage;
+          var e = Math.min(s + perPage, total);
 
-          items.forEach(function(item) { item.style.display = 'none'; });
-          filtered.forEach(function(item, i) {
-            item.style.display = (i >= start && i < end) ? '' : 'none';
-          });
+          allItems.forEach(function(it) { it.style.display = 'none'; });
+          for (var i = s; i < e; i++) filtered[i].style.display = '';
 
-          label.textContent = total > 0 ? (start + 1) + '-' + end + ' of ' + total : '0 results';
-          prevBtn.disabled = currentPage === 0;
-          prevBtn.style.color = currentPage === 0 ? '#d1d5db' : '#374151';
-          nextBtn.disabled = currentPage >= totalPages - 1;
-          nextBtn.style.color = currentPage >= totalPages - 1 ? '#d1d5db' : '#374151';
-        }
+          label.textContent = total > 0 ? (s+1) + '-' + e + ' of ' + total : '0 results';
+          prevBtn.disabled = pager.page === 0;
+          prevBtn.style.color = pager.page === 0 ? '#d1d5db' : '#374151';
+          nextBtn.disabled = pager.page >= pages - 1;
+          nextBtn.style.color = pager.page >= pages - 1 ? '#d1d5db' : '#374151';
+        };
 
-        searchInput.addEventListener('input', function() { currentPage = 0; render(); });
-        if (filterSelect) filterSelect.addEventListener('change', function() { currentPage = 0; render(); });
-        prevBtn.addEventListener('click', function(e) { e.stopPropagation(); if (currentPage > 0) { currentPage--; render(); } });
-        nextBtn.addEventListener('click', function(e) { e.stopPropagation(); if (currentPage < Math.ceil(getFilteredItems().length / perPage) - 1) { currentPage++; render(); } });
-      }
+        // Use direct property assignment to avoid listener conflicts
+        var searchInput = document.getElementById(cfg.search);
+        var filterSelect = cfg.filter ? document.getElementById(cfg.filter) : null;
+        var prevBtn = document.getElementById(cfg.prev);
+        var nextBtn = document.getElementById(cfg.next);
 
-      setupCardSearchFilter('ds-search', 'ds-filter', 'data-source', 'card-datasources-list', 'ds-page-label', 'ds-prev-btn', 'ds-next-btn', '.datasource-item', '.datasource-name', 5);
-      setupCardSearchFilter('tools-search', 'tools-filter', 'data-type', 'card-tools-list', 'tools-page-label', 'tools-prev-btn', 'tools-next-btn', '.tool-item', '.tool-name', 5);
-      setupCardSearchFilter('procs-search', 'procs-filter', 'data-status', 'card-procs-list', 'procs-page-label', 'procs-prev-btn', 'procs-next-btn', '.procedure-item', '.procedure-name', 5);
+        if (searchInput) searchInput.oninput = function() { pager.page = 0; pager.run(); };
+        if (filterSelect) filterSelect.onchange = function() { pager.page = 0; pager.run(); };
+        prevBtn.onclick = function(ev) { ev.stopPropagation(); if (pager.page > 0) { pager.page--; pager.run(); } };
+        nextBtn.onclick = function(ev) { ev.stopPropagation(); pager.page++; pager.run(); };
+        pager.run();
+      });
 
       // Create tool dropdown
       var createToolBtn = document.getElementById('create-tool-btn');
@@ -2330,7 +2228,7 @@ If no tracking → explain and offer alternative assistance</textarea>
 
       setupTableFilter('ds-table-filter', '#datasources-detail tbody', 1);    // Source column (index 1)
       setupTableFilter('tools-table-filter', '#tools-table-body', 2);         // Type column (index 2)
-      setupTableFilter('procs-table-filter', '#procedures-detail tbody', 1);  // Status column (index 1)
+      setupTableFilter('procs-table-filter', '#procedures-detail tbody', 2);  // Status column (index 2)
 
       var badgeClassMap = { 'Action': 'badge-action', 'Handoff': 'badge-handoff', 'Knowledge': 'badge-knowledge' };
       var descMap = {
