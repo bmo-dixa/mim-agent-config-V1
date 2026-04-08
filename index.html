@@ -1,0 +1,2398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mim AI Agents - Zazu</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, sans-serif; color: #1a1a2e; background: #fff; height: 100vh; overflow: hidden; }
+
+    /* Layout */
+    .app { display: flex; height: 100vh; }
+
+    /* ===== Primary Sidebar ===== */
+    .primary-sidebar {
+      width: 220px;
+      min-width: 220px;
+      background: #3d2d7c;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .primary-sidebar .logo {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-icon {
+      width: 28px; height: 28px; background: #7c5cfc; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+    }
+    .nav-items { padding: 0 8px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 8px; cursor: pointer;
+      font-size: 14px; color: rgba(255,255,255,0.75); transition: background 0.15s;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.1); }
+    .nav-item.active { background: rgba(255,255,255,0.15); color: #fff; }
+    .nav-item svg { width: 20px; height: 20px; opacity: 0.8; }
+    .nav-item.active svg { opacity: 1; }
+
+    .sidebar-section-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.45); padding: 20px 12px 6px; font-weight: 600;
+    }
+
+    /* Conversations list */
+    .conversation-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: 8px; cursor: pointer; position: relative;
+    }
+    .conversation-item:hover { background: rgba(255,255,255,0.08); }
+    .conv-avatar {
+      width: 32px; height: 32px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0;
+    }
+    .conv-info { flex: 1; min-width: 0; }
+    .conv-name { font-size: 13px; font-weight: 500; color: #fff; }
+    .conv-meta { font-size: 11px; color: rgba(255,255,255,0.5); }
+    .conv-close {
+      width: 18px; height: 18px; background: rgba(255,255,255,0.2); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      font-size: 10px; color: #fff; position: absolute; right: 10px; top: 8px;
+    }
+
+    /* Team list */
+    .team-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 5px 12px; font-size: 13px; color: rgba(255,255,255,0.7);
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .status-dot.online { background: #34d399; }
+    .status-dot.away { background: #fbbf24; }
+    .status-dot.offline { background: rgba(255,255,255,0.3); }
+
+    /* ===== Icon Sidebar ===== */
+    .icon-sidebar {
+      width: 48px; min-width: 48px;
+      background: #fff; border-right: 1px solid #e5e7eb;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 12px 0; overflow-y: auto; gap: 2px;
+    }
+    .icon-sidebar-item {
+      width: 36px; height: 36px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; border-radius: 8px;
+      color: #9ca3af; transition: background 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .icon-sidebar-item:hover { background: #f3f4f6; color: #6b7280; }
+    .icon-sidebar-item.active { background: #f3f0ff; color: #5b3fc9; }
+    .icon-sidebar-item svg { width: 18px; height: 18px; }
+    .icon-sidebar-spacer { height: 12px; flex-shrink: 0; }
+    .icon-sidebar-bottom {
+      margin-top: auto; display: flex; flex-direction: column;
+      align-items: center; gap: 4px; padding-top: 8px;
+    }
+    .icon-sidebar-bottom-label {
+      font-size: 9px; color: #9ca3af; writing-mode: vertical-rl;
+      text-orientation: mixed; letter-spacing: 0.5px;
+    }
+
+    /* ===== Main Content ===== */
+    .main-content {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* Top Header */
+    .top-header {
+      height: 52px; background: #fff; border-bottom: 1px solid #e5e7eb;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+    }
+    .search-btn {
+      width: 32px; height: 32px; border-radius: 6px; border: 1px solid #e5e7eb;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; background: #fff;
+    }
+    .header-center { display: flex; align-items: center; gap: 4px; }
+    .channel-icon {
+      width: 32px; height: 32px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; cursor: pointer;
+    }
+    .channel-icon.active { background: #5b3fc9; color: #fff; }
+    .channel-icon:not(.active) { color: #34d399; }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .header-icon {
+      width: 32px; height: 32px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; color: #6b7280; border-radius: 6px;
+    }
+    .header-icon:hover { background: #f3f4f6; }
+
+    /* Content Area */
+    .content-area {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .content-header {
+      padding: 24px 32px 0;
+      flex-shrink: 0;
+    }
+    .content-scrollable {
+      flex: 1; overflow-y: auto; padding: 0 32px 32px; min-height: 0;
+    }
+    .breadcrumb {
+      font-size: 14px; color: #6b7280; margin-bottom: 16px;
+    }
+    .breadcrumb a { color: #5b3fc9; text-decoration: none; }
+    .breadcrumb span { color: #1a1a2e; font-weight: 600; }
+    .tabs {
+      display: flex; gap: 24px; border-bottom: 2px solid #e5e7eb; margin-bottom: 24px;
+    }
+    .tab {
+      padding: 8px 0; font-size: 14px; color: #6b7280; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -2px; font-weight: 500;
+    }
+    .tab.active { color: #1a1a2e; border-bottom-color: #5b3fc9; }
+    .section-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+
+    /* Cards Grid */
+    .cards-row {
+      display: flex; flex-direction: column; gap: 20px; padding-bottom: 20px;
+      max-width: 520px;
+    }
+    .card {
+      background: #fff; border: none; border-radius: 12px; padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+    }
+    .card-edit {
+      font-size: 13px; color: #5b3fc9; cursor: pointer; font-weight: 500;
+    }
+    .card-avatar {
+      width: 36px; height: 36px; background: #e5e7eb; border-radius: 50%;
+    }
+
+    /* Identity Card */
+    .identity-field { margin-bottom: 12px; }
+    .identity-label { font-size: 13px; font-weight: 600; color: #374151; }
+    .identity-value { font-size: 13px; color: #6b7280; line-height: 1.5; }
+
+    /* Global Instructions */
+    .instructions-box {
+      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px;
+      font-size: 13px; color: #374151; line-height: 1.6; max-height: 180px; overflow: hidden;
+    }
+    .instructions-box .heading { font-weight: 700; margin-bottom: 4px; }
+
+    /* Data Sources */
+    .datasource-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid #f3f4f6;
+    }
+    .datasource-item:last-child { border-bottom: none; }
+    .datasource-name { font-size: 14px; font-weight: 500; }
+    .delete-btn {
+      width: 28px; height: 28px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; color: #9ca3af; border-radius: 6px;
+    }
+    .delete-btn:hover { background: #fef2f2; color: #ef4444; }
+
+    /* Tools */
+    .tool-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid #f3f4f6;
+    }
+    .tool-item:last-child { border-bottom: none; }
+    .tool-left { display: flex; align-items: center; gap: 10px; }
+    .tool-name { font-size: 14px; font-weight: 500; }
+    .badge {
+      font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+    }
+    .badge-action { background: #dcfce7; color: #16a34a; }
+    .badge-handoff { background: #dbeafe; color: #2563eb; }
+    .badge-knowledge { background: #f3e8ff; color: #7c3aed; }
+    .badge-resolution { background: #ccfbf1; color: #0d9488; }
+    .badge-escalation { background: #ffedd5; color: #ea580c; }
+    .edit-icon {
+      width: 28px; height: 28px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; color: #9ca3af; border-radius: 6px;
+    }
+    .edit-icon:hover { background: #f3f4f6; color: #5b3fc9; }
+
+    /* Procedures */
+    .procedure-item {
+      padding: 12px 0; border-bottom: 1px solid #f3f4f6;
+    }
+    .procedure-item:last-child { border-bottom: none; }
+    .procedure-header {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .procedure-left { display: flex; align-items: center; gap: 10px; }
+    .procedure-name { font-size: 14px; font-weight: 600; }
+    .procedure-desc { font-size: 13px; color: #6b7280; margin-top: 2px; }
+    .card-subtitle { font-size: 13px; color: #9ca3af; margin-top: -10px; margin-bottom: 12px; }
+    .card-search {
+      width: 100%; padding: 7px 10px 7px 32px; border: 1px solid #e5e7eb; border-radius: 8px;
+      font-size: 13px; font-family: inherit; color: #374151; outline: none;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") 8px center no-repeat;
+      margin-bottom: 8px;
+    }
+    .card-search:focus { border-color: #5b3fc9; box-shadow: 0 0 0 2px rgba(91,63,201,0.1); }
+    .card-search::placeholder { color: #9ca3af; }
+    .card-filter-row {
+      display: flex; gap: 8px; margin-bottom: 8px;
+    }
+    .card-filter-row .card-search { flex: 1; margin-bottom: 0; }
+    .card-filter {
+      padding: 7px 8px; border: 1px solid #e5e7eb; border-radius: 8px;
+      font-size: 12px; font-family: inherit; color: #374151; outline: none;
+      background: #fff; cursor: pointer; min-width: 100px;
+    }
+    .card-filter:focus { border-color: #5b3fc9; }
+
+    /* Connect button */
+    .connect-btn {
+      font-size: 13px; color: #5b3fc9; cursor: pointer; font-weight: 500;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* Split panel layout */
+    .split-layout {
+      display: flex; height: 100%; overflow: hidden;
+    }
+    .split-left {
+      width: 520px; min-width: 520px; overflow-y: auto;
+      padding: 0 24px 32px 0; border-right: 1px solid #e5e7eb;
+    }
+    .split-right {
+      flex: 1; overflow-y: auto; padding: 0 32px 32px 32px; display: none;
+    }
+    .split-right.active { display: block; }
+    .detail-content { display: none; }
+    .card.card-selected {
+      border-left: 3px solid #5b3fc9;
+    }
+
+    /* Identity & Persona Edit Page */
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
+    }
+    .page-header .breadcrumb { margin-bottom: 0; }
+    .save-btn {
+      padding: 8px 20px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+      font-size: 14px; font-weight: 500; cursor: pointer; color: #374151;
+    }
+    .save-btn:hover { background: #f9fafb; }
+    .form-section { margin-bottom: 28px; }
+    .form-section-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .form-section-desc { font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 12px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+    .form-input {
+      padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;
+      font-family: inherit; color: #374151; background: #fff; outline: none;
+    }
+    .form-input:focus { border-color: #5b3fc9; box-shadow: 0 0 0 2px rgba(91,63,201,0.1); }
+    .form-textarea {
+      padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;
+      font-family: inherit; color: #374151; background: #fff; outline: none;
+      resize: vertical; min-height: 100px; line-height: 1.6;
+    }
+    .form-textarea:focus { border-color: #5b3fc9; box-shadow: 0 0 0 2px rgba(91,63,201,0.1); }
+    .avatar-upload {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .avatar-placeholder {
+      width: 40px; height: 40px; background: #e5e7eb; border-radius: 8px;
+    }
+    .upload-btn {
+      padding: 8px 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+      font-size: 13px; font-weight: 500; cursor: pointer; color: #374151;
+    }
+    .upload-btn:hover { background: #f9fafb; }
+    .persona-guidance { margin-bottom: 16px; }
+    .persona-field {
+      display: flex; gap: 8px; margin-bottom: 6px; font-size: 13px; line-height: 1.5;
+    }
+    .persona-field-label { font-weight: 600; color: #1a1a2e; white-space: nowrap; }
+    .persona-field-hint { color: #6b7280; }
+    .clickable-card { cursor: pointer; transition: box-shadow 0.15s; }
+    .clickable-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+
+    /* Procedures page */
+    .procedures-layout {
+      display: flex; gap: 0; height: calc(100vh - 180px); overflow: hidden;
+    }
+    .procedures-sidebar {
+      width: 240px; min-width: 240px; border-right: 1px solid #e5e7eb;
+      overflow-y: auto; padding-right: 0;
+    }
+    .procedures-sidebar-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px 12px 0; font-size: 15px; font-weight: 600;
+    }
+    .procedures-sidebar-header .connect-btn { font-size: 13px; }
+    .proc-list-item {
+      padding: 10px 16px 10px 12px; font-size: 14px; cursor: pointer;
+      border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 6px;
+      margin-right: 16px; color: #374151;
+    }
+    .proc-list-item:hover { background: #f9fafb; }
+    .proc-list-item.active { background: #f3f0ff; border-color: #5b3fc9; color: #5b3fc9; font-weight: 500; }
+    .procedures-detail {
+      flex: 1; overflow-y: auto; padding: 0 0 32px 32px;
+    }
+    .procedure-detail-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    }
+    .procedure-detail-title { font-size: 18px; font-weight: 700; }
+    .checkbox-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font-size: 14px; color: #374151;
+    }
+    .checkbox-row input[type="checkbox"] {
+      width: 18px; height: 18px; accent-color: #5b3fc9; cursor: pointer;
+    }
+    .info-icon {
+      width: 16px; height: 16px; color: #9ca3af; display: inline-flex; align-items: center;
+    }
+    .tools-used { margin-bottom: 20px; }
+    .tools-used-label { font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #374151; }
+    .tool-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tool-tag {
+      display: flex; align-items: center; gap: 6px; padding: 6px 10px;
+      border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px;
+    }
+    .tool-tag .badge { margin: 0; }
+    .tool-tag-name { font-weight: 500; color: #374151; }
+    .tool-tag-close {
+      cursor: pointer; color: #9ca3af; font-size: 14px; line-height: 1;
+    }
+    .tool-tag-close:hover { color: #374151; }
+    .prompt-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;
+    }
+    .prompt-label { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+    .prompt-hint { font-size: 13px; color: #6b7280; margin-bottom: 10px; }
+    .insert-tools-link {
+      font-size: 13px; color: #5b3fc9; font-weight: 500; cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
+    }
+    /* Toggle switch */
+    .toggle-switch {
+      position: relative; width: 40px; height: 22px; display: inline-block; flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: #d1d5db; border-radius: 22px; transition: 0.2s;
+    }
+    .toggle-slider::before {
+      content: ""; position: absolute; width: 16px; height: 16px;
+      left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: #5b3fc9; }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+    /* Tools page */
+    .tools-layout {
+      display: flex; gap: 0; height: calc(100vh - 180px); overflow: hidden;
+    }
+    .tools-sidebar {
+      width: 260px; min-width: 260px; border-right: 1px solid #e5e7eb;
+      overflow-y: auto; padding-right: 0;
+    }
+    .tools-sidebar-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px 12px 0; font-size: 15px; font-weight: 600;
+    }
+    .tool-list-item {
+      padding: 10px 12px; font-size: 14px; cursor: pointer;
+      border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 6px;
+      margin-right: 16px; color: #374151;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .tool-list-item:hover { background: #f9fafb; }
+    .tool-list-item.active { background: #f3f0ff; border-color: #5b3fc9; }
+    .tool-list-item .badge { flex-shrink: 0; }
+    .tools-detail {
+      flex: 1; overflow-y: auto; padding: 0 0 32px 32px;
+    }
+    .tools-detail-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    }
+    .tools-detail-title { font-size: 18px; font-weight: 700; }
+
+    .dropdown-wrapper { position: relative; }
+    .dropdown-menu {
+      display: none; position: absolute; top: 100%; right: 0; margin-top: 4px;
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 160px; z-index: 10;
+      padding: 4px 0; overflow: hidden;
+    }
+    .dropdown-menu.open { display: block; }
+    .dropdown-item {
+      padding: 8px 14px; font-size: 14px; cursor: pointer; color: #374151;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .dropdown-item:hover { background: #f3f0ff; color: #5b3fc9; }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+    .primary-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Primary Sidebar -->
+    <aside class="primary-sidebar">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+      </div>
+
+      <nav class="nav-items">
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Conversations
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Contacts
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Search
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Team
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </div>
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </div>
+      </nav>
+
+      <div class="sidebar-section-label">Conversations</div>
+      <div style="padding: 0 8px;">
+        <div class="conversation-item">
+          <div class="conv-avatar" style="background: #34d399; color: #fff;">EH</div>
+          <div class="conv-info">
+            <div class="conv-name">Esther Howard</div>
+            <div class="conv-meta">#97133 &middot; 2 minutes ago</div>
+          </div>
+        </div>
+        <div class="conversation-item">
+          <div class="conv-avatar" style="background: #60a5fa; color: #fff;">CF</div>
+          <div class="conv-info">
+            <div class="conv-name">Cody Fisher</div>
+            <div class="conv-meta">#98133 &middot; Account issue</div>
+          </div>
+          <div class="conv-close">&times;</div>
+        </div>
+        <div class="conversation-item">
+          <div class="conv-avatar" style="background: #a78bfa; color: #fff;">KM</div>
+          <div class="conv-info">
+            <div class="conv-name">Kathryn Murphy</div>
+            <div class="conv-meta">#98331 &middot; 1 hour ago</div>
+          </div>
+          <div class="conv-close">&times;</div>
+        </div>
+      </div>
+
+      <div class="sidebar-section-label">Team</div>
+      <div style="padding: 0 8px;">
+        <div class="team-item"><span class="status-dot online"></span> Kasper</div>
+        <div class="team-item"><span class="status-dot online"></span> Mads</div>
+        <div class="team-item"><span class="status-dot online"></span> Smilena</div>
+        <div class="team-item"><span class="status-dot away"></span> Tue</div>
+        <div class="team-item"><span class="status-dot away"></span> Jacob</div>
+        <div class="team-item"><span class="status-dot offline"></span> Jakob</div>
+        <div class="team-item"><span class="status-dot offline"></span> Christian</div>
+        <div class="team-item"><span class="status-dot offline"></span> Mauro</div>
+        <div class="team-item"><span class="status-dot offline"></span> Lauren</div>
+        <div class="team-item"><span class="status-dot offline"></span> Alex</div>
+        <div class="team-item"><span class="status-dot offline"></span> Ritter</div>
+      </div>
+    </aside>
+
+    <!-- Icon Sidebar -->
+    <nav class="icon-sidebar">
+      <!-- Personal -->
+      <div class="icon-sidebar-item" title="Profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Preferences">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>
+      </div>
+      <div class="icon-sidebar-spacer"></div>
+      <!-- General -->
+      <div class="icon-sidebar-item" title="Organization">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Agents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Teams">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="icon-sidebar-spacer"></div>
+      <!-- Channels and flows -->
+      <div class="icon-sidebar-item" title="Chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Email">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Third party messaging">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Messenger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      </div>
+      <div class="icon-sidebar-spacer"></div>
+      <!-- Customizations -->
+      <div class="icon-sidebar-item" title="Audio files">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Business hours">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Custom attributes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Forms">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Help Centers">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="icon-sidebar-spacer"></div>
+      <!-- Mim / AI -->
+      <div class="icon-sidebar-item active" title="Mim AI Agents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Targets">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Satisfaction">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Edit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Documents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Ideas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Roles">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+      </div>
+      <div class="icon-sidebar-item" title="Security">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="icon-sidebar-bottom">
+        <div class="icon-sidebar-item" title="About" style="color: #5b3fc9; font-size: 9px; font-weight: 600;">
+          <span>Abou</span>
+        </div>
+        <div class="icon-sidebar-item" title="Dixa">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#5b3fc9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="search-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <div class="header-center">
+          <div class="channel-icon active" style="width: 28px; height: 28px; font-size: 11px; font-weight: 700;">CW</div>
+          <div class="channel-icon" title="Phone">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="channel-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
+          <div class="channel-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div class="channel-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="channel-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          </div>
+          <div class="channel-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="header-right">
+          <div class="header-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div class="header-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
+          <div class="header-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="header-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div class="header-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="header-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <div class="content-area">
+        <div class="content-header">
+          <div class="breadcrumb">
+            <a href="#">Mim AI agents</a> &nbsp;&rsaquo;&nbsp; <span>Zazu</span>
+          </div>
+
+          <div class="tabs">
+            <div class="tab active">Configure</div>
+            <div class="tab">Test</div>
+          </div>
+        </div>
+
+        <div class="content-scrollable">
+        <div class="split-layout">
+          <!-- Left: Cards list (always visible) -->
+          <div class="split-left">
+            <div class="cards-row">
+              <!-- Identity & Persona -->
+              <div class="card clickable-card" id="identity-card">
+                <div class="card-header">
+                  <div class="card-title">
+                    <div class="card-avatar"></div>
+                    Identity &amp; Persona
+                  </div>
+                </div>
+                <div class="identity-field">
+                  <span class="identity-value" style="font-weight: 600; color: #374151;">Zazu (Zazu - Acme Support Agent UK)</span>
+                </div>
+                <div class="identity-field">
+                  <span class="identity-value">General purpose support agent for Acme Apparel UK</span>
+                </div>
+                <div class="identity-field" style="margin-top: 8px;">
+                  <span class="identity-label">Persona</span>
+                </div>
+                <div class="identity-field">
+                  <span class="identity-value">You are a **cheerful live support AI agent**, you are part of a customer service team. Your goal is to provide the best possible assistance to the customer. You are friendly and knowledgeable and you speak in a clear and casual way using plain-language.</span>
+                </div>
+              </div>
+
+              <!-- Data Sources -->
+              <div class="card clickable-card" id="datasources-card">
+                <div class="card-header">
+                  <div class="card-title">Data Sources</div>
+                  <div class="connect-btn">+ Connect</div>
+                </div>
+                <div class="card-filter-row" onclick="event.stopPropagation()">
+                  <input type="text" class="card-search" id="ds-search" placeholder="Search..." style="margin-bottom:0">
+                  <select class="card-filter" id="ds-filter"><option value="">All Sources</option><option value="Elevio">Elevio</option><option value="Dixa Knowledge">Dixa Knowledge</option></select>
+                </div>
+                <div id="card-datasources-list">
+                  <div class="datasource-item" data-card-ds="0" data-source="Elevio"><span class="datasource-name">Dixa</span><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div>
+                  <div class="datasource-item" data-card-ds="1" data-source="Dixa Knowledge"><span class="datasource-name">Help Center 1</span><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div>
+                  <div class="datasource-item" data-card-ds="2" data-source="Dixa Knowledge"><span class="datasource-name">Help Center 2</span><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div>
+                  <div class="datasource-item" data-card-ds="3" data-source="Elevio"><span class="datasource-name">Product FAQ</span><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div>
+                  <div class="datasource-item" data-card-ds="4" data-source="Dixa Knowledge"><span class="datasource-name">Shipping Policies</span><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div>
+                  <div class="datasource-item" data-card-ds="5" data-source="Dixa Knowledge" style="display:none;"><span class="datasource-name">Returns Guide</span><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div>
+                  <div class="datasource-item" data-card-ds="6" data-source="Elevio" style="display:none;"><span class="datasource-name">Warranty Info</span><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid #f3f4f6; margin-top: 4px;">
+                  <span id="ds-page-label" style="font-size: 12px; color: #9ca3af;">1-5 of 7</span>
+                  <div style="display: flex; gap: 4px;">
+                    <button id="ds-prev-btn" disabled style="width: 28px; height: 28px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #d1d5db;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button id="ds-next-btn" style="width: 28px; height: 28px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #374151;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tools -->
+              <div class="card clickable-card" id="tools-card">
+                <div class="card-header">
+                  <div class="card-title">Tools</div>
+                </div>
+                <div class="card-subtitle">Active and most used Tools</div>
+                <div class="card-filter-row" onclick="event.stopPropagation()">
+                  <input type="text" class="card-search" id="tools-search" placeholder="Search..." style="margin-bottom:0">
+                  <select class="card-filter" id="tools-filter"><option value="">All Types</option><option value="Action">Action</option><option value="Handoff">Handoff</option><option value="Knowledge">Knowledge</option></select>
+                </div>
+                <div id="card-tools-list">
+                  <div class="tool-item" data-card-tool="0" data-type="Action">
+                    <div class="tool-left">
+                      <span class="tool-name">Get Order Information</span>
+                      <span class="badge badge-action">Action</span>
+                    </div>
+                    <div class="edit-icon" id="card-edit-tool-top">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                  </div>
+                  <div class="tool-item" data-card-tool="1" data-type="Handoff">
+                    <div class="tool-left">
+                      <span class="tool-name">Handle pricing inquiry</span>
+                      <span class="badge badge-handoff">Handoff</span>
+                    </div>
+                    <div class="edit-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                  </div>
+                  <div class="tool-item" data-card-tool="2" data-type="Knowledge">
+                    <div class="tool-left">
+                      <span class="tool-name">Query knowledge ...</span>
+                      <span class="badge badge-knowledge">Knowledge</span>
+                    </div>
+                    <div class="edit-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                  </div>
+                  <div class="tool-item" data-card-tool="3" data-type="Action">
+                    <div class="tool-left">
+                      <span class="tool-name">Verify customer identity</span>
+                      <span class="badge badge-action">Action</span>
+                    </div>
+                    <div class="edit-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                  </div>
+                  <div class="tool-item" data-card-tool="4" data-type="Action">
+                    <div class="tool-left">
+                      <span class="tool-name">Process refund request</span>
+                      <span class="badge badge-action">Action</span>
+                    </div>
+                    <div class="edit-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                  </div>
+                  <div class="tool-item" data-card-tool="5" data-type="Action" style="display: none;">
+                    <div class="tool-left">
+                      <span class="tool-name">Update shipping details</span>
+                      <span class="badge badge-action">Action</span>
+                    </div>
+                    <div class="edit-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                  </div>
+                  <div class="tool-item" data-card-tool="6" data-type="Knowledge" style="display: none;">
+                    <div class="tool-left">
+                      <span class="tool-name">Check inventory levels</span>
+                      <span class="badge badge-knowledge">Knowledge</span>
+                    </div>
+                    <div class="edit-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                  </div>
+                  <div class="tool-item" data-card-tool="7" data-type="Handoff" style="display: none;">
+                    <div class="tool-left">
+                      <span class="tool-name">Escalate to supervisor</span>
+                      <span class="badge badge-handoff">Handoff</span>
+                    </div>
+                    <div class="edit-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                  </div>
+                  <div class="tool-item" data-card-tool="8" data-type="Action" style="display: none;">
+                    <div class="tool-left">
+                      <span class="tool-name">Provide product rec...</span>
+                      <span class="badge badge-action">Action</span>
+                    </div>
+                    <div class="edit-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid #f3f4f6; margin-top: 4px;">
+                  <span id="tools-page-label" style="font-size: 12px; color: #9ca3af;">1-5 of 9</span>
+                  <div style="display: flex; gap: 4px;">
+                    <button id="tools-prev-btn" disabled style="width: 28px; height: 28px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #9ca3af;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button id="tools-next-btn" style="width: 28px; height: 28px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #374151;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Global Instructions -->
+              <div class="card clickable-card" id="global-instructions-card">
+                <div class="card-header">
+                  <div class="card-title">Global Instructions</div>
+                </div>
+                <div class="instructions-box">
+                  <div class="heading">## Proactive handoff ##</div>
+                  If the user needs further help, offer to transfer them to a human colleague. If they agree, initiate the transfer.
+                  <br><br>
+                  --
+                </div>
+              </div>
+
+              <!-- Procedures -->
+              <div class="card clickable-card" id="procedures-card">
+                <div class="card-header">
+                  <div class="card-title">Procedures</div>
+                </div>
+                <div class="card-subtitle">Active and most used procedures</div>
+                <div class="card-filter-row" onclick="event.stopPropagation()">
+                  <input type="text" class="card-search" id="procs-search" placeholder="Search..." style="margin-bottom:0">
+                  <select class="card-filter" id="procs-filter"><option value="">All Status</option><option value="Enabled">Enabled</option><option value="Disabled">Disabled</option></select>
+                </div>
+                <div id="card-procs-list">
+                  <div class="procedure-item" data-card-proc="0" data-status="Enabled"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">WISMO</span></div><div class="edit-icon" id="card-edit-proc-top"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="1" data-status="Enabled"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Returns</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="2" data-status="Enabled"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Claims</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="3" data-status="Enabled"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Product Inquiry</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="4" data-status="Enabled"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Order Status</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="5" data-status="Disabled" style="display:none;"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Payment Issues</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="6" data-status="Enabled" style="display:none;"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Shipping Information</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="7" data-status="Disabled" style="display:none;"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Technical Support</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="8" data-status="Enabled" style="display:none;"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Account Management</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="9" data-status="Enabled" style="display:none;"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Warranty Questions</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="10" data-status="Enabled" style="display:none;"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Feedback &amp; Suggestions</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="11" data-status="Disabled" style="display:none;"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Cancel Order</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="12" data-status="Enabled" style="display:none;"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Exchange Requests</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                  <div class="procedure-item" data-card-proc="13" data-status="Enabled" style="display:none;"><div class="procedure-header"><div class="procedure-left"><span class="procedure-name">Promotions &amp; Discounts</span></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div></div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid #f3f4f6; margin-top: 4px;">
+                  <span id="procs-page-label" style="font-size: 12px; color: #9ca3af;">1-5 of 14</span>
+                  <div style="display: flex; gap: 4px;">
+                    <button id="procs-prev-btn" disabled style="width: 28px; height: 28px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #d1d5db;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button id="procs-next-btn" style="width: 28px; height: 28px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #374151;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div><!-- end split-left -->
+
+          <!-- Right: Detail panel -->
+          <div class="split-right" id="detail-panel">
+            <!-- Identity & Persona Detail -->
+            <div id="identity-detail" class="detail-content">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                <div class="form-section-title" style="margin-bottom: 0; font-size: 18px;">Identity &amp; Persona</div>
+                <button class="save-btn">Save</button>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title">Avatar</div>
+                <div class="avatar-upload">
+                  <div class="avatar-placeholder"></div>
+                  <button class="upload-btn">Upload Avatar</button>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Display Name</label>
+                  <input type="text" class="form-input" value="">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Internal Name</label>
+                  <input type="text" class="form-input" value="">
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px;">Description</div>
+                <input type="text" class="form-input" style="width: 100%;" value="General purpose support agent for Acme Apparel UK">
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title">Tone &amp; Persona</div>
+                <div class="form-section-desc">Define how Mim communicates with your customers. Consider Including:</div>
+                <div class="persona-guidance">
+                  <div class="persona-field">
+                    <span class="persona-field-label">Role &amp; Company</span>
+                    <span class="persona-field-hint">e.g. You are a live support agent, developed by Acme, Denmark's leading apparel brand.</span>
+                  </div>
+                  <div class="persona-field">
+                    <span class="persona-field-label">Goal</span>
+                    <span class="persona-field-hint">e.g. Your goal is to provide the best possible assistance to the customer.</span>
+                  </div>
+                  <div class="persona-field">
+                    <span class="persona-field-label">Language Style</span>
+                    <span class="persona-field-hint">e.g. Formal, casual, technical, plain-language, ...</span>
+                  </div>
+                  <div class="persona-field">
+                    <span class="persona-field-label">Personality</span>
+                    <span class="persona-field-hint">e.g. Friendly, empathetic, calm, knowledgeable, ...</span>
+                  </div>
+                  <div class="persona-field">
+                    <span class="persona-field-label">How to reference your company</span>
+                    <span class="persona-field-hint">e.g. You always speak on behalf of Acme, using first-person plural language such as "we," "our," and "us"</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px;">Persona Instructions</div>
+                <textarea class="form-textarea" style="width: 100%; min-height: 120px;">You are a **cheerful live support AI agent**, you are part of a customer service team. Your goal is to provide the best possible assistance to the customer. You are friendly and knowledgeable and you speak in a clear and casual way using plain-language.</textarea>
+              </div>
+            </div><!-- end identity-detail -->
+
+            <!-- Tools Detail -->
+            <div id="tools-detail" class="detail-content">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 18px; font-weight: 700;">All tools</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <select id="tools-table-filter" class="form-input" style="width: auto; padding: 8px 32px 8px 12px; cursor: pointer; font-size: 13px;">
+                    <option value="">Filter by Type</option>
+                    <option value="Action">Action</option>
+                    <option value="Handoff">Handoff</option>
+                    <option value="Knowledge">Knowledge</option>
+                  </select>
+                  <div class="dropdown-wrapper">
+                    <button id="create-tool-btn" style="padding: 8px 20px; background: #5b3fc9; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">Create tool</button>
+                    <div class="dropdown-menu" id="create-tool-dropdown">
+                      <div class="dropdown-item">Action</div>
+                      <div class="dropdown-item">Handoff</div>
+                      <div class="dropdown-item">Knowledge</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <th style="width: 40px; padding: 12px 8px; text-align: left;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></th>
+                    <th style="padding: 12px 8px; text-align: left; font-size: 13px; font-weight: 600; color: #6b7280;">Name</th>
+                    <th style="padding: 12px 8px; text-align: left; font-size: 13px; font-weight: 600; color: #6b7280;">Type</th>
+                    <th style="padding: 12px 8px; text-align: left; font-size: 13px; font-weight: 600; color: #6b7280;">Status</th>
+                    <th style="width: 120px; padding: 12px 8px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="tools-table-body">
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td>
+                    <td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Get Order Information</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #6b7280;">Action</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td>
+                    <td style="padding: 14px 8px;">
+                      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <div class="edit-icon" id="edit-tool-get-dummy"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td>
+                    <td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Handle pricing inquiry</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #6b7280;">Handoff</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td>
+                    <td style="padding: 14px 8px;">
+                      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td>
+                    <td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Query knowledge ...</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #6b7280;">Knowledge</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td>
+                    <td style="padding: 14px 8px;">
+                      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td>
+                    <td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Verify customer identity</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #6b7280;">Action</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td>
+                    <td style="padding: 14px 8px;">
+                      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td>
+                    <td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Process refund request</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #6b7280;">Action</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td>
+                    <td style="padding: 14px 8px;">
+                      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td>
+                    <td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Update shipping details</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #6b7280;">Action</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td>
+                    <td style="padding: 14px 8px;">
+                      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td>
+                    <td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Check inventory levels</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #6b7280;">Knowledge</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td>
+                    <td style="padding: 14px 8px;">
+                      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td>
+                    <td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Escalate to supervisor</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #6b7280;">Handoff</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td>
+                    <td style="padding: 14px 8px;">
+                      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td>
+                    <td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Provide product rec...</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #6b7280;">Action</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td>
+                    <td style="padding: 14px 8px;">
+                      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
+                        <div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div><!-- end tools-detail -->
+
+            <!-- Tool Edit Detail -->
+            <div id="tool-edit-detail" class="detail-content">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                <div style="font-size: 14px; color: #6b7280;">
+                  <a href="#" id="tool-edit-back" style="color: #5b3fc9; text-decoration: none;">All Tools</a>
+                  <span style="margin: 0 6px;">&rsaquo;</span>
+                  <span id="tool-edit-breadcrumb-name" style="color: #1a1a2e; font-weight: 600;">Get Order Information</span>
+                </div>
+                <button class="save-btn">Save</button>
+              </div>
+
+              <div class="form-section-desc" style="margin-bottom: 24px; line-height: 1.6;">
+                With tools you can extend Mim's capabilities by giving it the means to interact with systems external to it
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px;">Name *</div>
+                <input type="text" id="tool-edit-name" class="form-input" style="width: 100%;" value="Get Order Information">
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px;">Description *</div>
+                <input type="text" id="tool-edit-description" class="form-input" style="width: 100%;" value="Get order information from Shopify. Requires order number.">
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px;">Trigger *</div>
+                <textarea id="tool-edit-trigger" class="form-textarea" style="width: 100%; min-height: 80px;">Call when the user asks about order tracking or delivery timing. E.g. "where is my order", "can I get the status of my order", "when will my order be delivered?"</textarea>
+              </div>
+
+              <div class="form-section" style="margin-top: 16px;">
+                <div class="form-label" style="margin-bottom: 12px;">Tool enablement</div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: #374151;">
+                    <input type="radio" name="tool-enable-mode" value="all" checked style="width: 18px; height: 18px; accent-color: #5b3fc9; cursor: pointer;">
+                    Enable for agent and all instructions
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: #374151;">
+                    <input type="radio" name="tool-enable-mode" value="agent" style="width: 18px; height: 18px; accent-color: #5b3fc9; cursor: pointer;">
+                    Enable for agent only
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: #374151;">
+                    <input type="radio" name="tool-enable-mode" value="disable" style="width: 18px; height: 18px; accent-color: #5b3fc9; cursor: pointer;">
+                    Disable
+                  </label>
+                </div>
+              </div>
+
+              <!-- Get variables from chat -->
+              <div class="form-section" style="margin-top: 32px;">
+                <div class="form-section-title" style="margin-bottom: 8px;">Get variables from chat</div>
+                <div style="background: #f0f4ff; border-radius: 8px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <span style="font-size: 13px; color: #374151; line-height: 1.5;">Use variables to dynamically populate your URL or body. Each variable is composed of a unique name and a description. You can add at most five variables.</span>
+                </div>
+                <button class="upload-btn" style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 16px; line-height: 1;">+</span> Add variable
+                </button>
+              </div>
+
+              <!-- Connect to API -->
+              <div class="form-section" style="margin-top: 32px;">
+                <div class="form-section-title" style="margin-bottom: 8px;">Connect to API</div>
+                <div style="background: #f0f4ff; border-radius: 8px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 16px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <span style="font-size: 13px; color: #374151; line-height: 1.5;">Build the API call for this action. Variables from the previous section can be used in the body and URL. In order to add basic authentication to the headers, fill in the username and password fields and click on Generate button.</span>
+                </div>
+
+                <div style="display: flex; align-items: flex-end; gap: 16px; margin-bottom: 20px;">
+                  <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <div class="form-label">Method *</div>
+                    <select class="form-input" style="width: 120px; cursor: pointer;">
+                      <option>GET</option>
+                      <option>POST</option>
+                      <option>PUT</option>
+                      <option>PATCH</option>
+                      <option>DELETE</option>
+                    </select>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+                    <div class="form-label">URL</div>
+                    <input type="text" class="form-input" style="width: 100%;" placeholder="Your api url">
+                  </div>
+                  <div class="insert-tools-link" style="white-space: nowrap; padding-bottom: 10px;">+ Insert variable</div>
+                </div>
+
+                <!-- Header / Body / Test tabs -->
+                <div style="margin-bottom: 20px;">
+                  <div style="display: flex; gap: 20px; border-bottom: 2px solid #e5e7eb; margin-bottom: 16px;">
+                    <div class="tab active" onclick="switchToolApiTab(this, 'tool-header-tab')">Header</div>
+                    <div class="tab" onclick="switchToolApiTab(this, 'tool-body-tab')">Body</div>
+                    <div class="tab" onclick="switchToolApiTab(this, 'tool-test-tab')">Test</div>
+                  </div>
+
+                  <div id="tool-header-tab" style="background: #f9fafb; border-radius: 8px; padding: 16px;">
+                    <div class="form-label" style="margin-bottom: 8px; color: #5b3fc9;">Authorization method</div>
+                    <select class="form-input" style="width: 280px; margin-bottom: 16px; cursor: pointer;">
+                      <option>None</option>
+                      <option>Basic Auth</option>
+                      <option>Bearer Token</option>
+                      <option>API Key</option>
+                    </select>
+
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                      <span class="form-label">Custom headers</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    </div>
+                    <div style="background: #eef1f6; border-radius: 6px; padding: 10px 14px; font-size: 13px; color: #9ca3af; margin-bottom: 10px;">No custom headers added</div>
+                    <button class="upload-btn" style="display: flex; align-items: center; gap: 6px;">
+                      <span style="font-size: 16px; line-height: 1;">+</span> Add custom header
+                    </button>
+                  </div>
+
+                  <div id="tool-body-tab" style="display: none; background: #f9fafb; border-radius: 8px; padding: 16px;">
+                    <div style="font-size: 13px; color: #9ca3af;">No body content configured</div>
+                  </div>
+
+                  <div id="tool-test-tab" style="display: none; background: #f9fafb; border-radius: 8px; padding: 16px;">
+                    <div style="font-size: 13px; color: #9ca3af;">Run a test request to verify your API connection</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Use API outputs in chat -->
+              <div class="form-section" style="margin-top: 32px;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                  <div class="form-section-title" style="margin-bottom: 0;">Use API outputs in chat</div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div class="form-section-desc" style="margin-bottom: 16px; line-height: 1.5;">
+                  Choose data from the API response for Mim to reference in chat. Use JMESPath syntax to extract specific values. If @ is used, the entire response will be used by Mim.
+                </div>
+
+                <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 16px;">
+                  <div style="flex: 0 0 280px; display: flex; flex-direction: column; gap: 14px;">
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                        <span class="form-label">Path</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      </div>
+                      <input type="text" class="form-input" style="width: 100%;" value="@">
+                    </div>
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                        <span class="form-label">Output</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      </div>
+                      <input type="text" class="form-input" style="width: 100%;" value="allData">
+                    </div>
+                  </div>
+                  <div style="flex: 1; background: #f0f4f8; border-radius: 8px; padding: 14px; min-height: 120px; font-family: monospace; font-size: 13px; color: #6b7280;">
+                    No response body available
+                  </div>
+                  <div class="delete-btn" style="margin-top: 4px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </div>
+                </div>
+
+                <button class="upload-btn" style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 16px; line-height: 1;">+</span> Add output
+                </button>
+              </div>
+
+            </div><!-- end tool-edit-detail -->
+
+            <!-- Global Instructions Detail -->
+            <div id="global-instructions-detail" class="detail-content">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <div class="form-section-title" style="margin-bottom: 0; font-size: 18px;">Global Instructions</div>
+                <button class="save-btn">Save</button>
+              </div>
+
+              <div class="form-section-desc" style="margin-bottom: 24px; line-height: 1.6;">
+                Define how Mim behaves in conversations with your customers by providing persistent global instructions and interaction rules that apply across most conversations. For specific agent tasks that require step-by-step logic or tool use, use Procedures. <strong>See sample instructions below and our instructions library for examples.</strong>
+              </div>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <div class="form-label">Global Instructions</div>
+                <button class="upload-btn" style="border-color: #5b3fc9; color: #5b3fc9;">+ Add from Library</button>
+              </div>
+              <textarea class="form-textarea" style="width: 100%; min-height: 380px; line-height: 1.7;">## Proactive handoff ##
+If the user needs further help, offer to transfer them to a human colleague. If they agree, initiate the transfer.
+
+--
+
+##Offer to transfer to an agent to complement sharing contact information##
+When providing support contact details (email, phone, or website), you may offer to transfer the user to a human agent. If they accept, proceed with the transfer.
+
+--
+
+##No medical advice##
+Don't provide any medical advice. If the customer is having an emergency, tell them to contact the emergency line or go to a hospital.</textarea>
+
+            </div><!-- end global-instructions-detail -->
+
+            <!-- Data Sources Detail -->
+            <div id="datasources-detail" class="detail-content">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                <div style="font-size: 18px; font-weight: 700;">Data Sources</div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <select id="ds-table-filter" class="form-input" style="width: auto; padding: 8px 32px 8px 12px; cursor: pointer; font-size: 13px;">
+                    <option value="">Filter by Source</option>
+                    <option value="Elevio">Elevio</option>
+                    <option value="Dixa Knowledge">Dixa Knowledge</option>
+                  </select>
+                <button style="padding: 8px 20px; background: #5b3fc9; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 16px;">+</span> Connect data source
+                </button>
+                </div>
+              </div>
+
+              <table style="width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                <thead>
+                  <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <th style="padding: 14px 16px; text-align: left; font-size: 13px; font-weight: 600; color: #5b3fc9;">Name</th>
+                    <th style="padding: 14px 16px; text-align: left; font-size: 13px; font-weight: 600; color: #5b3fc9;">Source</th>
+                    <th style="padding: 14px 16px; text-align: left; font-size: 13px; font-weight: 600; color: #5b3fc9;">Last synced</th>
+                    <th style="width: 50px; padding: 14px 16px;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 16px;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="width: 10px; height: 10px; background: #34d399; border-radius: 50; flex-shrink: 0;"></span>
+                        <span style="font-size: 14px; font-weight: 500; padding: 4px 10px; border: 1px solid #e5e7eb; border-radius: 16px;">Dixa</span>
+                      </div>
+                    </td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">Elevio</td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">08/04/2026 15:04:27</td>
+                    <td style="padding: 16px;">
+                      <div class="delete-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 16px;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="width: 10px; height: 10px; background: #34d399; border-radius: 50%; flex-shrink: 0;"></span>
+                        <span style="font-size: 14px; font-weight: 500; padding: 4px 10px; border: 1px solid #e5e7eb; border-radius: 16px;">Help Center 1</span>
+                      </div>
+                    </td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">Dixa Knowledge</td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">08/04/2026 15:04:44</td>
+                    <td style="padding: 16px;">
+                      <div class="delete-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 16px;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="width: 10px; height: 10px; background: #34d399; border-radius: 50%; flex-shrink: 0;"></span>
+                        <span style="font-size: 14px; font-weight: 500; padding: 4px 10px; border: 1px solid #e5e7eb; border-radius: 16px;">Help Center 2</span>
+                      </div>
+                    </td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">Dixa Knowledge</td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">08/04/2026 15:04:16</td>
+                    <td style="padding: 16px;"><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 16px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 10px; height: 10px; background: #34d399; border-radius: 50%; flex-shrink: 0;"></span><span style="font-size: 14px; font-weight: 500; padding: 4px 10px; border: 1px solid #e5e7eb; border-radius: 16px;">Product FAQ</span></div></td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">Elevio</td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">08/04/2026 14:52:03</td>
+                    <td style="padding: 16px;"><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 16px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 10px; height: 10px; background: #34d399; border-radius: 50%; flex-shrink: 0;"></span><span style="font-size: 14px; font-weight: 500; padding: 4px 10px; border: 1px solid #e5e7eb; border-radius: 16px;">Shipping Policies</span></div></td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">Dixa Knowledge</td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">08/04/2026 14:30:11</td>
+                    <td style="padding: 16px;"><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 16px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 10px; height: 10px; background: #34d399; border-radius: 50%; flex-shrink: 0;"></span><span style="font-size: 14px; font-weight: 500; padding: 4px 10px; border: 1px solid #e5e7eb; border-radius: 16px;">Returns Guide</span></div></td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">Dixa Knowledge</td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">08/04/2026 13:45:38</td>
+                    <td style="padding: 16px;"><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 16px;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 10px; height: 10px; background: #34d399; border-radius: 50%; flex-shrink: 0;"></span><span style="font-size: 14px; font-weight: 500; padding: 4px 10px; border: 1px solid #e5e7eb; border-radius: 16px;">Warranty Info</span></div></td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">Elevio</td>
+                    <td style="padding: 16px; font-size: 14px; color: #374151;">08/04/2026 12:18:55</td>
+                    <td style="padding: 16px;"><div class="delete-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div><!-- end datasources-detail -->
+
+            <!-- Procedures Detail -->
+            <!-- Procedures List Table -->
+            <div id="procedures-detail" class="detail-content">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 18px; font-weight: 700;">All procedures</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <select id="procs-table-filter" class="form-input" style="width: auto; padding: 8px 32px 8px 12px; cursor: pointer; font-size: 13px;">
+                    <option value="">Filter by Status</option>
+                    <option value="Enabled">Enabled</option>
+                    <option value="Disabled">Disabled</option>
+                  </select>
+                  <button id="create-proc-btn" style="padding: 8px 20px; background: #5b3fc9; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">Create procedure</button>
+                </div>
+              </div>
+
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <th style="width: 40px; padding: 12px 8px; text-align: left;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></th>
+                    <th style="padding: 12px 8px; text-align: left; font-size: 13px; font-weight: 600; color: #6b7280;">Name</th>
+                    <th style="padding: 12px 8px; text-align: left; font-size: 13px; font-weight: 600; color: #6b7280;">Status</th>
+                    <th style="width: 120px; padding: 12px 8px;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td>
+                    <td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">WISMO</td>
+                    <td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td>
+                    <td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon" id="edit-proc-wismo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Returns</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Claims</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Product Inquiry</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Order Status</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Payment Issues</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Shipping Information</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Technical Support</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Account Management</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Warranty Questions</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Feedback &amp; Suggestions</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Cancel Order</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Exchange Requests</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                  <tr style="border-bottom: 1px solid #f3f4f6;"><td style="padding: 14px 8px;"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #5b3fc9; cursor: pointer;"></td><td style="padding: 14px 8px; font-size: 14px; font-weight: 500;">Promotions &amp; Discounts</td><td style="padding: 14px 8px; font-size: 14px; color: #374151;">Enabled</td><td style="padding: 14px 8px;"><div style="display: flex; gap: 8px; justify-content: flex-end;"><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div><div class="edit-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div></div></td></tr>
+                </tbody>
+              </table>
+            </div><!-- end procedures-detail -->
+
+            <!-- Procedure Edit (WISMO) -->
+            <div id="procedure-edit-detail" class="detail-content">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                <div style="font-size: 14px; color: #6b7280;">
+                  <a href="#" id="proc-edit-back" style="color: #5b3fc9; text-decoration: none;">All Procedures</a>
+                  <span style="margin: 0 6px;">&rsaquo;</span>
+                  <span id="proc-edit-breadcrumb-name" style="color: #1a1a2e; font-weight: 600;">WISMO</span>
+                </div>
+                <button class="save-btn">Save</button>
+              </div>
+
+              <div id="proc-edit-desc-short" class="form-section-desc" style="margin-bottom: 24px; line-height: 1.6;">
+                Here you can define specific agent tasks for specific scenarios that require step-by-step logic and/or tool use.
+              </div>
+
+              <div id="proc-edit-desc-full" class="form-section-desc" style="margin-bottom: 24px; line-height: 1.7; display: none;">
+                <p style="margin-bottom: 12px;">Here you can define specific agent tasks for specific scenarios that require step-by-step logic and/or tool use.</p>
+                <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 10px; color: #374151;">
+                  <li><strong>Step-by-step workflows that should be followed precisely</strong><br>
+                    <span style="color: #6b7280;">Example: Returns process (verify order → check return window → generate return label)</span></li>
+                  <li><strong>Multiple scenarios that require different approaches</strong><br>
+                    <span style="color: #6b7280;">Example: Separate procedures for "Order Issues", "Account Changes", "Product Questions"</span></li>
+                  <li><strong>Critical processes where precision matters more than flexibility</strong><br>
+                    <span style="color: #6b7280;">Example: Refund processing, account security verification</span></li>
+                </ul>
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px;">Name *</div>
+                <input type="text" id="proc-edit-name" class="form-input" style="width: 100%;" value="WISMO">
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px; color: #5b3fc9;">When to trigger *</div>
+                <textarea id="proc-edit-trigger" class="form-textarea" style="width: 100%; min-height: 110px;">Use this when customer wants delivery information:
+- "Where is my order?"
+- "When will my package arrive?"
+- "Track my delivery"</textarea>
+              </div>
+
+              <div class="checkbox-row">
+                <input type="checkbox" id="proc-edit-enable" checked style="width: 18px; height: 18px; accent-color: #5b3fc9; cursor: pointer;">
+                <label>Enable this procedure to run in your AI agent</label>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </div>
+
+              <div class="form-section" style="margin-top: 16px;">
+                <div style="font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #374151;">Tools used in this procedure</div>
+                <div id="proc-edit-tools" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  <div style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px;">
+                    <span class="badge badge-action">Action</span>
+                    <span style="font-weight: 500; color: #374151;">Tag Conversation</span>
+                    <span style="cursor: pointer; color: #9ca3af; font-size: 14px; line-height: 1;">&times;</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px;">
+                    <span class="badge badge-handoff">Handoff</span>
+                    <span style="font-weight: 500; color: #374151;">Escalate to sales team</span>
+                    <span style="cursor: pointer; color: #9ca3af; font-size: 14px; line-height: 1;">&times;</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px;">
+                    <span class="badge badge-knowledge">Knowledge</span>
+                    <span style="font-weight: 500; color: #374151;">Get Refund Policy</span>
+                    <span style="cursor: pointer; color: #9ca3af; font-size: 14px; line-height: 1;">&times;</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section" style="margin-top: 24px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                  <div class="form-label">Prompt *</div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                  <div style="font-size: 13px; color: #6b7280;">Procedures do not have access to tools unless you directly insert them in your prompt.</div>
+                  <div style="font-size: 13px; color: #5b3fc9; font-weight: 500; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px;">+ Insert tools</div>
+                </div>
+                <textarea id="proc-edit-prompt" class="form-textarea" style="width: 100%; min-height: 280px;">Step 1: Check conversation context
+If email address and order number are present → go to Step 2
+If missing information → ask for missing details first
+
+Step 2: Retrieve customer data
+Get the customer's information with email and order number
+
+Step 3: Get tracking information
+Get the tracking status for the specific order
+
+Step 4: Format response
+If tracking available → provide tracking link and estimated delivery
+If no tracking → explain and offer alternative assistance</textarea>
+              </div>
+            </div><!-- end procedure-edit-detail -->
+
+          </div><!-- end split-right -->
+        </div><!-- end split-layout -->
+
+        <!-- Global Instructions Edit Page -->
+        <div id="global-instructions-page" class="page">
+          <div class="page-header">
+            <div class="breadcrumb" style="margin-bottom: 0;">
+              <a href="#" onclick="showPage('overview-page'); return false;">Overview</a> &nbsp;&rsaquo;&nbsp; <span>Global Instructions</span>
+            </div>
+            <button class="save-btn">Save</button>
+          </div>
+
+          <div class="form-section-desc" style="margin-bottom: 24px; line-height: 1.6;">
+            Define how Mim behaves in conversations with your customers by providing persistent global instructions that apply across most conversations. For specific agent tasks that require step-by-step logic or tool use, use Procedures. <strong>See sample instructions below and our instructions library for examples.</strong>
+          </div>
+
+          <div class="form-section">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <div class="form-label">Global Instructions</div>
+              <div style="display: flex; gap: 8px;">
+                <button class="upload-btn">+ Insert tools</button>
+                <button class="upload-btn" style="border-color: #5b3fc9; color: #5b3fc9;">+ Add from Library</button>
+              </div>
+            </div>
+            <textarea class="form-textarea" style="width: 100%; min-height: 340px; line-height: 1.7;">## Proactive handoff ##
+If the user needs further help, offer to transfer them to a human colleague. If they agree, initiate the transfer.
+
+--
+
+##Offer to transfer to an agent to complement sharing contact information##
+When providing support contact details (email, phone, or website), you may offer to transfer the user to a human agent. If they accept, proceed with the transfer.
+
+--
+
+##No medical advice##
+Don't provide any medical advice. If the customer is having an emergency, tell them to contact the emergency line or go to a hospital.</textarea>
+          </div>
+        </div><!-- end global-instructions-page -->
+
+        <!-- Procedures Page -->
+        <div id="procedures-page" class="page">
+          <div class="breadcrumb" style="margin-bottom: 20px;">
+            <a href="#" onclick="showPage('overview-page'); return false;">Overview</a> &nbsp;&rsaquo;&nbsp; <span>Procedures</span>
+          </div>
+
+          <div class="procedures-layout">
+            <!-- Left: procedure list -->
+            <div class="procedures-sidebar">
+              <div class="procedures-sidebar-header">
+                <span>Procedures</span>
+                <span class="connect-btn">+ Add New</span>
+              </div>
+              <div id="proc-list">
+                <div class="proc-list-item active" data-proc="wismo">WISMO</div>
+                <div class="proc-list-item" data-proc="returns">Returns</div>
+                <div class="proc-list-item" data-proc="claims">Claims</div>
+                <div class="proc-list-item" data-proc="product-inquiry">Product Inquiry</div>
+                <div class="proc-list-item" data-proc="order-status">Order Status</div>
+                <div class="proc-list-item" data-proc="payment-issues">Payment Issues</div>
+                <div class="proc-list-item" data-proc="shipping-info">Shipping Information</div>
+                <div class="proc-list-item" data-proc="tech-support">Technical Support</div>
+                <div class="proc-list-item" data-proc="account-mgmt">Account Management</div>
+                <div class="proc-list-item" data-proc="warranty">Warranty Questions</div>
+                <div class="proc-list-item" data-proc="feedback">Feedback &amp; Suggestions</div>
+                <div class="proc-list-item" data-proc="cancel-order">Cancel Order</div>
+                <div class="proc-list-item" data-proc="exchange">Exchange Requests</div>
+                <div class="proc-list-item" data-proc="promotions">Promotions &amp; Discounts</div>
+              </div>
+            </div>
+
+            <!-- Right: procedure detail -->
+            <div class="procedures-detail" id="proc-detail">
+              <div class="procedure-detail-header">
+                <div class="procedure-detail-title" id="proc-detail-title">WISMO</div>
+                <button class="save-btn">Save</button>
+              </div>
+
+              <div class="form-section-desc" style="margin-bottom: 24px; line-height: 1.6;">
+                Here you can define specific agent tasks for specific scenarios that require step-by-step logic and/or tool use, and critical processes where precision matters more than flexibility.
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px;">Name *</div>
+                <input type="text" class="form-input" style="width: 100%;" id="proc-name" value="WISMO">
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px; color: #5b3fc9;">When to trigger *</div>
+                <textarea class="form-textarea" style="width: 100%; min-height: 110px;" id="proc-trigger">Use this when customer wants delivery information:
+- "Where is my order?"
+- "When will my package arrive?"
+- "Track my delivery"</textarea>
+              </div>
+
+              <div class="checkbox-row">
+                <input type="checkbox" checked id="proc-enable">
+                <label for="proc-enable">Enable this procedure to run in your AI agent</label>
+                <span class="info-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </span>
+              </div>
+
+              <div class="tools-used">
+                <div class="tools-used-label">Tools used in this procedure</div>
+                <div class="tool-tags">
+                  <div class="tool-tag">
+                    <span class="badge badge-action">Action</span>
+                    <span class="tool-tag-name">Tag Conversation</span>
+                    <span class="tool-tag-close">&times;</span>
+                  </div>
+                  <div class="tool-tag">
+                    <span class="badge badge-handoff">Handoff</span>
+                    <span class="tool-tag-name">Escalate to sales team</span>
+                    <span class="tool-tag-close">&times;</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="prompt-header">
+                  <div class="prompt-label">Prompt *</div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                  <div class="prompt-hint">Procedures do not have access to tools unless you directly insert them in your prompt.</div>
+                  <div class="insert-tools-link">+ Insert tools</div>
+                </div>
+                <textarea class="form-textarea" style="width: 100%; min-height: 280px;" id="proc-prompt">Step 1: Check conversation context
+If email address and order number are present → go to Step 2
+If missing information → ask for missing details first
+
+Step 2: Retrieve customer data
+Get the customer's information with email and order number
+
+Step 3: Get tracking information
+Get the tracking status for the specific order
+
+Step 4: Format response
+If tracking available → provide tracking link and estimated delivery
+If no tracking → explain and offer alternative assistance</textarea>
+              </div>
+            </div>
+          </div>
+        </div><!-- end procedures-page -->
+
+        <!-- Tools Page -->
+        <div id="tools-page" class="page">
+          <div class="breadcrumb" style="margin-bottom: 20px;">
+            <a href="#" onclick="showPage('overview-page'); return false;">Overview</a> &nbsp;&rsaquo;&nbsp; <span>Tools</span>
+          </div>
+
+          <div class="tools-layout">
+            <!-- Left: tool list -->
+            <div class="tools-sidebar">
+              <div class="tools-sidebar-header">
+                <span>Tools</span>
+                <div class="dropdown-wrapper">
+                  <span class="connect-btn" id="tools-add-new-btn">+ Add New</span>
+                  <div class="dropdown-menu" id="tools-add-new-dropdown">
+                    <div class="dropdown-item">Action</div>
+                    <div class="dropdown-item">Handoff</div>
+                    <div class="dropdown-item">Knowledge</div>
+                  </div>
+                </div>
+              </div>
+              <div id="tool-list">
+                <div class="tool-list-item active" data-tool="get-order-info">
+                  <span>Get Order Information</span>
+                  <span class="badge badge-action">Action</span>
+                </div>
+                <div class="tool-list-item" data-tool="handle-pricing">
+                  <span>Handle pricing inquiry</span>
+                  <span class="badge badge-handoff">Handoff</span>
+                </div>
+                <div class="tool-list-item" data-tool="query-knowledge">
+                  <span>Query knowledge ...</span>
+                  <span class="badge badge-knowledge">Knowledge</span>
+                </div>
+                <div class="tool-list-item" data-tool="verify-identity">
+                  <span>Verify customer identity</span>
+                  <span class="badge badge-action">Action</span>
+                </div>
+                <div class="tool-list-item" data-tool="process-refund">
+                  <span>Process refund request</span>
+                  <span class="badge badge-action">Action</span>
+                </div>
+                <div class="tool-list-item" data-tool="update-shipping">
+                  <span>Update shipping details</span>
+                  <span class="badge badge-action">Action</span>
+                </div>
+                <div class="tool-list-item" data-tool="check-inventory">
+                  <span>Check inventory levels</span>
+                  <span class="badge badge-knowledge">Knowledge</span>
+                </div>
+                <div class="tool-list-item" data-tool="escalate-supervisor">
+                  <span>Escalate to supervisor</span>
+                  <span class="badge badge-handoff">Handoff</span>
+                </div>
+                <div class="tool-list-item" data-tool="provide-product">
+                  <span>Provide product rec...</span>
+                  <span class="badge badge-action">Action</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: tool detail -->
+            <div class="tools-detail">
+              <div class="tools-detail-header">
+                <div class="tools-detail-title" id="tool-detail-title">Get Order Information</div>
+                <button class="save-btn">Save</button>
+              </div>
+
+              <div class="form-section-desc" id="tool-detail-desc" style="margin-bottom: 24px; line-height: 1.6;">
+                With tools you can extend Mim's capabilities by giving it the means to interact with systems external to it.
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px;">Name *</div>
+                <input type="text" class="form-input" style="width: 100%;" id="tool-detail-name" value="Get Order Information">
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px;">Description *</div>
+                <input type="text" class="form-input" style="width: 100%;" id="tool-detail-description" value="Get order information from Shopify. Requires order number.">
+              </div>
+
+              <div class="form-section">
+                <div class="form-label" style="margin-bottom: 8px;">Trigger *</div>
+                <textarea class="form-textarea" style="width: 100%; min-height: 80px;" id="tool-detail-trigger">Call when the user asks about order tracking or delivery timing. E.g. "where is my order", "can I get the status of my order", "when will my order be delivered?"</textarea>
+              </div>
+
+              <div class="form-section" style="margin-top: 16px;">
+                <div class="form-label" style="margin-bottom: 12px;">Tool enablement</div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: #374151;">
+                    <input type="radio" name="tool-detail-enable-mode" value="all" checked style="width: 18px; height: 18px; accent-color: #5b3fc9; cursor: pointer;">
+                    Enable for agent and all instructions
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: #374151;">
+                    <input type="radio" name="tool-detail-enable-mode" value="agent" style="width: 18px; height: 18px; accent-color: #5b3fc9; cursor: pointer;">
+                    Enable for agent only
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: #374151;">
+                    <input type="radio" name="tool-detail-enable-mode" value="disable" style="width: 18px; height: 18px; accent-color: #5b3fc9; cursor: pointer;">
+                    Disable
+                  </label>
+                </div>
+              </div>
+
+              <!-- Get variables from chat -->
+              <div class="form-section" style="margin-top: 12px;">
+                <div class="form-section-title" style="margin-bottom: 8px;">Get variables from chat</div>
+                <div style="background: #f0f4ff; border-radius: 8px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <span style="font-size: 13px; color: #374151; line-height: 1.5;">Use variables to dynamically populate your URL or body. Each variable is composed of a unique name and a description. You can add at most five variables.</span>
+                </div>
+                <button class="upload-btn" style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 16px; line-height: 1;">+</span> Add variable
+                </button>
+              </div>
+
+              <!-- Connect to API -->
+              <div class="form-section" style="margin-top: 28px;">
+                <div class="form-section-title" style="margin-bottom: 8px;">Connect to API</div>
+                <div style="background: #f0f4ff; border-radius: 8px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 16px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <span style="font-size: 13px; color: #374151; line-height: 1.5;">Build the API call for this action. Variables from the previous section can be used in the body and URL. In order to add basic authentication to the headers, fill in the username and password fields and click on Generate button.</span>
+                </div>
+
+                <div style="display: flex; align-items: flex-end; gap: 16px; margin-bottom: 20px;">
+                  <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <div class="form-label">Method *</div>
+                    <select class="form-input" style="width: 120px; cursor: pointer;">
+                      <option>GET</option>
+                      <option>POST</option>
+                      <option>PUT</option>
+                      <option>PATCH</option>
+                      <option>DELETE</option>
+                    </select>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
+                    <div class="form-label">URL</div>
+                    <input type="text" class="form-input" style="width: 100%;" placeholder="Your api url">
+                  </div>
+                  <div class="insert-tools-link" style="white-space: nowrap; padding-bottom: 10px;">+ Insert variable</div>
+                </div>
+
+                <!-- Header / Body / Test tabs -->
+                <div style="margin-bottom: 20px;">
+                  <div style="display: flex; gap: 20px; border-bottom: 2px solid #e5e7eb; margin-bottom: 16px;">
+                    <div class="tab active" onclick="switchApiTab(this, 'header-tab')">Header</div>
+                    <div class="tab" onclick="switchApiTab(this, 'body-tab')">Body</div>
+                    <div class="tab" onclick="switchApiTab(this, 'test-tab')">Test</div>
+                  </div>
+
+                  <div id="header-tab" style="background: #f9fafb; border-radius: 8px; padding: 16px;">
+                    <div class="form-label" style="margin-bottom: 8px; color: #5b3fc9;">Authorization method</div>
+                    <select class="form-input" style="width: 280px; margin-bottom: 16px; cursor: pointer;">
+                      <option>None</option>
+                      <option>Basic Auth</option>
+                      <option>Bearer Token</option>
+                      <option>API Key</option>
+                    </select>
+
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                      <span class="form-label">Custom headers</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    </div>
+                    <div style="background: #eef1f6; border-radius: 6px; padding: 10px 14px; font-size: 13px; color: #9ca3af; margin-bottom: 10px;">No custom headers added</div>
+                    <button class="upload-btn" style="display: flex; align-items: center; gap: 6px;">
+                      <span style="font-size: 16px; line-height: 1;">+</span> Add custom header
+                    </button>
+                  </div>
+
+                  <div id="body-tab" style="display: none; background: #f9fafb; border-radius: 8px; padding: 16px;">
+                    <div style="font-size: 13px; color: #9ca3af;">No body content configured</div>
+                  </div>
+
+                  <div id="test-tab" style="display: none; background: #f9fafb; border-radius: 8px; padding: 16px;">
+                    <div style="font-size: 13px; color: #9ca3af;">Run a test request to verify your API connection</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Use API outputs in chat -->
+              <div class="form-section" style="margin-top: 28px;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                  <div class="form-section-title" style="margin-bottom: 0;">Use API outputs in chat</div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div class="form-section-desc" style="margin-bottom: 16px; line-height: 1.5;">
+                  Choose data from the API response for Mim to reference in chat. Use JMESPath syntax to extract specific values. If @ is used, the entire response will be used by Mim.
+                </div>
+
+                <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 16px;">
+                  <div style="flex: 0 0 280px; display: flex; flex-direction: column; gap: 14px;">
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                        <span class="form-label">Path</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      </div>
+                      <input type="text" class="form-input" style="width: 100%;" value="@">
+                    </div>
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                        <span class="form-label">Output</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      </div>
+                      <input type="text" class="form-input" style="width: 100%;" value="allData">
+                    </div>
+                  </div>
+                  <div style="flex: 1; background: #f0f4f8; border-radius: 8px; padding: 14px; min-height: 120px; font-family: monospace; font-size: 13px; color: #6b7280;">
+                    No response body available
+                  </div>
+                  <div class="delete-btn" style="margin-top: 4px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </div>
+                </div>
+
+                <button class="upload-btn" style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 16px; line-height: 1;">+</span> Add output
+                </button>
+              </div>
+            </div>
+          </div>
+        </div><!-- end tools-page -->
+
+        </div><!-- end content-scrollable -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchApiTab(tabEl, panelId) {
+      tabEl.parentElement.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      tabEl.classList.add('active');
+      ['header-tab', 'body-tab', 'test-tab'].forEach(function(id) {
+        document.getElementById(id).style.display = id === panelId ? 'block' : 'none';
+      });
+    }
+
+    function switchToolApiTab(tabEl, panelId) {
+      tabEl.parentElement.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      tabEl.classList.add('active');
+      ['tool-header-tab', 'tool-body-tab', 'tool-test-tab'].forEach(function(id) {
+        document.getElementById(id).style.display = id === panelId ? 'block' : 'none';
+      });
+    }
+
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+    }
+
+    function showDetail(cardId, detailId) {
+      // Remove selected state from all cards
+      document.querySelectorAll('.split-left .card').forEach(function(c) {
+        c.classList.remove('card-selected');
+      });
+      // Highlight the clicked card
+      document.getElementById(cardId).classList.add('card-selected');
+      // Hide all detail contents, show the target
+      document.querySelectorAll('.detail-content').forEach(function(d) {
+        d.style.display = 'none';
+      });
+      document.getElementById(detailId).style.display = 'block';
+      // Show the right panel
+      document.getElementById('detail-panel').classList.add('active');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Auto-select Identity & Persona on load
+      showDetail('identity-card', 'identity-detail');
+
+      document.getElementById('identity-card').addEventListener('click', function() {
+        showDetail('identity-card', 'identity-detail');
+      });
+      document.getElementById('global-instructions-card').addEventListener('click', function() {
+        showDetail('global-instructions-card', 'global-instructions-detail');
+      });
+      document.getElementById('procedures-card').addEventListener('click', function() {
+        showDetail('procedures-card', 'procedures-detail');
+      });
+      document.getElementById('datasources-card').addEventListener('click', function() {
+        showDetail('datasources-card', 'datasources-detail');
+      });
+      document.getElementById('tools-card').addEventListener('click', function() {
+        showDetail('tools-card', 'tools-detail');
+      });
+
+      // Edit icon on first tool row -> tool edit detail
+      document.getElementById('edit-tool-get-dummy').addEventListener('click', function(e) {
+        e.stopPropagation();
+        // Populate fields for existing tool
+        document.getElementById('tool-edit-breadcrumb-name').textContent = 'Get Order Information';
+        document.getElementById('tool-edit-name').value = 'Get Order Information';
+        document.getElementById('tool-edit-description').value = 'Get order information from Shopify. Requires order number.';
+        document.getElementById('tool-edit-trigger').value = 'Call when the user asks about order tracking or delivery timing. E.g. "where is my order", "can I get the status of my order", "when will my order be delivered?"';
+        document.querySelector('input[name="tool-enable-mode"][value="all"]').checked = true;
+        document.querySelectorAll('.detail-content').forEach(function(d) { d.style.display = 'none'; });
+        document.getElementById('tool-edit-detail').style.display = 'block';
+        document.getElementById('detail-panel').classList.add('active');
+      });
+
+      // Back link from tool edit to tools list
+      document.getElementById('tool-edit-back').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.detail-content').forEach(function(d) { d.style.display = 'none'; });
+        document.getElementById('tools-detail').style.display = 'block';
+      });
+
+      // Edit WISMO procedure
+      document.getElementById('edit-proc-wismo').addEventListener('click', function(e) {
+        e.stopPropagation();
+        // Populate with WISMO data
+        document.getElementById('proc-edit-breadcrumb-name').textContent = 'WISMO';
+        document.getElementById('proc-edit-name').value = 'WISMO';
+        document.getElementById('proc-edit-trigger').value = 'Use this when customer wants delivery information:\n- "Where is my order?"\n- "When will my package arrive?"\n- "Track my delivery"';
+        document.getElementById('proc-edit-enable').checked = true;
+        document.getElementById('proc-edit-tools').style.display = 'flex';
+        document.getElementById('proc-edit-prompt').value = 'Step 1: Check conversation context\nIf email address and order number are present → go to Step 2\nIf missing information → ask for missing details first\n\nStep 2: Retrieve customer data\nGet the customer\'s information with email and order number\n\nStep 3: Get tracking information\nGet the tracking status for the specific order\n\nStep 4: Format response\nIf tracking available → provide tracking link and estimated delivery\nIf no tracking → explain and offer alternative assistance';
+        document.getElementById('proc-edit-desc-short').style.display = 'block';
+        document.getElementById('proc-edit-desc-full').style.display = 'none';
+        document.querySelectorAll('.detail-content').forEach(function(d) { d.style.display = 'none'; });
+        document.getElementById('procedure-edit-detail').style.display = 'block';
+        document.getElementById('detail-panel').classList.add('active');
+      });
+
+      // Create procedure button
+      document.getElementById('create-proc-btn').addEventListener('click', function() {
+        document.querySelectorAll('.detail-content').forEach(function(d) { d.style.display = 'none'; });
+        document.getElementById('procedure-edit-detail').style.display = 'block';
+        document.getElementById('detail-panel').classList.add('active');
+        document.getElementById('proc-edit-breadcrumb-name').textContent = 'New procedure';
+        document.getElementById('proc-edit-name').value = '';
+        document.getElementById('proc-edit-trigger').value = '';
+        document.getElementById('proc-edit-enable').checked = true;
+        document.getElementById('proc-edit-tools').style.display = 'none';
+        document.getElementById('proc-edit-prompt').value = '';
+        document.getElementById('proc-edit-desc-short').style.display = 'none';
+        document.getElementById('proc-edit-desc-full').style.display = 'block';
+      });
+
+      // Card edit icon: top tool (Get Order Information)
+      function openToolEdit(e) {
+        e.stopPropagation();
+        document.getElementById('tool-edit-breadcrumb-name').textContent = 'Get Order Information';
+        document.getElementById('tool-edit-name').value = 'Get Order Information';
+        document.getElementById('tool-edit-description').value = 'Get order information from Shopify. Requires order number.';
+        document.getElementById('tool-edit-trigger').value = 'Call when the user asks about order tracking or delivery timing. E.g. "where is my order", "can I get the status of my order", "when will my order be delivered?"';
+        document.querySelector('input[name="tool-enable-mode"][value="all"]').checked = true;
+        document.querySelectorAll('.split-left .card').forEach(function(c) { c.classList.remove('card-selected'); });
+        document.getElementById('tools-card').classList.add('card-selected');
+        document.querySelectorAll('.detail-content').forEach(function(d) { d.style.display = 'none'; });
+        document.getElementById('tool-edit-detail').style.display = 'block';
+        document.getElementById('detail-panel').classList.add('active');
+      }
+      document.getElementById('card-edit-tool-top').addEventListener('click', openToolEdit);
+      document.querySelector('[data-card-tool="0"]').addEventListener('click', openToolEdit);
+      document.querySelector('[data-card-tool="0"]').style.cursor = 'pointer';
+
+      // Card edit icon: top procedure (WISMO)
+      function openProcEdit(e) {
+        e.stopPropagation();
+        document.getElementById('proc-edit-breadcrumb-name').textContent = 'WISMO';
+        document.getElementById('proc-edit-name').value = 'WISMO';
+        document.getElementById('proc-edit-trigger').value = 'Use this when customer wants delivery information:\n- "Where is my order?"\n- "When will my package arrive?"\n- "Track my delivery"';
+        document.getElementById('proc-edit-enable').checked = true;
+        document.getElementById('proc-edit-tools').style.display = 'flex';
+        document.getElementById('proc-edit-prompt').value = 'Step 1: Check conversation context\nIf email address and order number are present → go to Step 2\nIf missing information → ask for missing details first\n\nStep 2: Retrieve customer data\nGet the customer\'s information with email and order number\n\nStep 3: Get tracking information\nGet the tracking status for the specific order\n\nStep 4: Format response\nIf tracking available → provide tracking link and estimated delivery\nIf no tracking → explain and offer alternative assistance';
+        document.getElementById('proc-edit-desc-short').style.display = 'block';
+        document.getElementById('proc-edit-desc-full').style.display = 'none';
+        document.querySelectorAll('.split-left .card').forEach(function(c) { c.classList.remove('card-selected'); });
+        document.getElementById('procedures-card').classList.add('card-selected');
+        document.querySelectorAll('.detail-content').forEach(function(d) { d.style.display = 'none'; });
+        document.getElementById('procedure-edit-detail').style.display = 'block';
+        document.getElementById('detail-panel').classList.add('active');
+      }
+      document.getElementById('card-edit-proc-top').addEventListener('click', openProcEdit);
+      document.querySelector('[data-card-proc="0" data-status="Enabled"]').addEventListener('click', openProcEdit);
+      document.querySelector('[data-card-proc="0" data-status="Enabled"]').style.cursor = 'pointer';
+
+      // Back from procedure edit to procedures list
+      document.getElementById('proc-edit-back').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.detail-content').forEach(function(d) { d.style.display = 'none'; });
+        document.getElementById('procedures-detail').style.display = 'block';
+      });
+
+      // Tools card pagination
+      (function() {
+        var perPage = 5;
+        var currentPage = 0;
+        var items = document.querySelectorAll('#card-tools-list .tool-item');
+        var total = items.length;
+        var totalPages = Math.ceil(total / perPage);
+        var prevBtn = document.getElementById('tools-prev-btn');
+        var nextBtn = document.getElementById('tools-next-btn');
+        var label = document.getElementById('tools-page-label');
+
+        function renderPage() {
+          var start = currentPage * perPage;
+          var end = Math.min(start + perPage, total);
+          items.forEach(function(item, i) {
+            item.style.display = (i >= start && i < end) ? '' : 'none';
+          });
+          label.textContent = (start + 1) + '-' + end + ' of ' + total;
+          prevBtn.disabled = currentPage === 0;
+          prevBtn.style.color = currentPage === 0 ? '#d1d5db' : '#374151';
+          nextBtn.disabled = currentPage >= totalPages - 1;
+          nextBtn.style.color = currentPage >= totalPages - 1 ? '#d1d5db' : '#374151';
+        }
+
+        prevBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (currentPage > 0) { currentPage--; renderPage(); }
+        });
+        nextBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
+        });
+
+        renderPage();
+      })();
+
+      // Data sources card pagination
+      (function() {
+        var perPage = 5;
+        var currentPage = 0;
+        var items = document.querySelectorAll('#card-datasources-list .datasource-item');
+        var total = items.length;
+        var totalPages = Math.ceil(total / perPage);
+        var prevBtn = document.getElementById('ds-prev-btn');
+        var nextBtn = document.getElementById('ds-next-btn');
+        var label = document.getElementById('ds-page-label');
+
+        function renderPage() {
+          var start = currentPage * perPage;
+          var end = Math.min(start + perPage, total);
+          items.forEach(function(item, i) {
+            item.style.display = (i >= start && i < end) ? '' : 'none';
+          });
+          label.textContent = (start + 1) + '-' + end + ' of ' + total;
+          prevBtn.disabled = currentPage === 0;
+          prevBtn.style.color = currentPage === 0 ? '#d1d5db' : '#374151';
+          nextBtn.disabled = currentPage >= totalPages - 1;
+          nextBtn.style.color = currentPage >= totalPages - 1 ? '#d1d5db' : '#374151';
+        }
+
+        prevBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (currentPage > 0) { currentPage--; renderPage(); }
+        });
+        nextBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
+        });
+
+        renderPage();
+      })();
+
+      // Procedures card pagination
+      (function() {
+        var perPage = 5;
+        var currentPage = 0;
+        var items = document.querySelectorAll('#card-procs-list .procedure-item');
+        var total = items.length;
+        var totalPages = Math.ceil(total / perPage);
+        var prevBtn = document.getElementById('procs-prev-btn');
+        var nextBtn = document.getElementById('procs-next-btn');
+        var label = document.getElementById('procs-page-label');
+
+        function renderPage() {
+          var start = currentPage * perPage;
+          var end = Math.min(start + perPage, total);
+          items.forEach(function(item, i) {
+            item.style.display = (i >= start && i < end) ? '' : 'none';
+          });
+          label.textContent = (start + 1) + '-' + end + ' of ' + total;
+          prevBtn.disabled = currentPage === 0;
+          prevBtn.style.color = currentPage === 0 ? '#d1d5db' : '#374151';
+          nextBtn.disabled = currentPage >= totalPages - 1;
+          nextBtn.style.color = currentPage >= totalPages - 1 ? '#d1d5db' : '#374151';
+        }
+
+        prevBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (currentPage > 0) { currentPage--; renderPage(); }
+        });
+        nextBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (currentPage < totalPages - 1) { currentPage++; renderPage(); }
+        });
+
+        renderPage();
+      })();
+
+      // Card search functionality
+      function setupCardSearchFilter(searchId, filterId, filterAttr, listId, labelId, prevId, nextId, itemSelector, nameSelector, perPage) {
+        var searchInput = document.getElementById(searchId);
+        var filterSelect = filterId ? document.getElementById(filterId) : null;
+        var items = Array.from(document.querySelectorAll('#' + listId + ' ' + itemSelector));
+        var label = document.getElementById(labelId);
+        var prevBtn = document.getElementById(prevId);
+        var nextBtn = document.getElementById(nextId);
+        var currentPage = 0;
+
+        function getFilteredItems() {
+          var query = searchInput.value.toLowerCase().trim();
+          var filterVal = filterSelect ? filterSelect.value : '';
+          return items.filter(function(item) {
+            var name = item.querySelector(nameSelector);
+            var matchesSearch = !query || (name && name.textContent.toLowerCase().indexOf(query) !== -1);
+            var matchesFilter = !filterVal || (item.getAttribute(filterAttr) === filterVal);
+            return matchesSearch && matchesFilter;
+          });
+        }
+
+        function render() {
+          var filtered = getFilteredItems();
+          var total = filtered.length;
+          var totalPages = Math.ceil(total / perPage) || 1;
+          if (currentPage >= totalPages) currentPage = totalPages - 1;
+          if (currentPage < 0) currentPage = 0;
+          var start = currentPage * perPage;
+          var end = Math.min(start + perPage, total);
+
+          items.forEach(function(item) { item.style.display = 'none'; });
+          filtered.forEach(function(item, i) {
+            item.style.display = (i >= start && i < end) ? '' : 'none';
+          });
+
+          label.textContent = total > 0 ? (start + 1) + '-' + end + ' of ' + total : '0 results';
+          prevBtn.disabled = currentPage === 0;
+          prevBtn.style.color = currentPage === 0 ? '#d1d5db' : '#374151';
+          nextBtn.disabled = currentPage >= totalPages - 1;
+          nextBtn.style.color = currentPage >= totalPages - 1 ? '#d1d5db' : '#374151';
+        }
+
+        searchInput.addEventListener('input', function() { currentPage = 0; render(); });
+        if (filterSelect) filterSelect.addEventListener('change', function() { currentPage = 0; render(); });
+        prevBtn.addEventListener('click', function(e) { e.stopPropagation(); if (currentPage > 0) { currentPage--; render(); } });
+        nextBtn.addEventListener('click', function(e) { e.stopPropagation(); if (currentPage < Math.ceil(getFilteredItems().length / perPage) - 1) { currentPage++; render(); } });
+      }
+
+      setupCardSearchFilter('ds-search', 'ds-filter', 'data-source', 'card-datasources-list', 'ds-page-label', 'ds-prev-btn', 'ds-next-btn', '.datasource-item', '.datasource-name', 5);
+      setupCardSearchFilter('tools-search', 'tools-filter', 'data-type', 'card-tools-list', 'tools-page-label', 'tools-prev-btn', 'tools-next-btn', '.tool-item', '.tool-name', 5);
+      setupCardSearchFilter('procs-search', 'procs-filter', 'data-status', 'card-procs-list', 'procs-page-label', 'procs-prev-btn', 'procs-next-btn', '.procedure-item', '.procedure-name', 5);
+
+      // Create tool dropdown
+      var createToolBtn = document.getElementById('create-tool-btn');
+      var createToolDropdown = document.getElementById('create-tool-dropdown');
+      createToolBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        createToolDropdown.classList.toggle('open');
+      });
+      createToolDropdown.querySelectorAll('.dropdown-item').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+          e.stopPropagation();
+          createToolDropdown.classList.remove('open');
+          var type = item.textContent.trim();
+          if (type === 'Action') {
+            // Set breadcrumb to "New tool"
+            document.getElementById('tool-edit-breadcrumb-name').textContent = 'New tool';
+            // Clear all fields
+            document.getElementById('tool-edit-name').value = '';
+            document.getElementById('tool-edit-description').value = '';
+            document.getElementById('tool-edit-trigger').value = '';
+            document.querySelector('input[name="tool-enable-mode"][value="all"]').checked = true;
+            // Show the tool edit detail
+            document.querySelectorAll('.detail-content').forEach(function(d) { d.style.display = 'none'; });
+            document.getElementById('tool-edit-detail').style.display = 'block';
+            document.getElementById('detail-panel').classList.add('active');
+          }
+        });
+      });
+      document.addEventListener('click', function() {
+        createToolDropdown.classList.remove('open');
+      });
+
+      function resetToolDetail() {
+        var toolList = document.getElementById('tool-list');
+        // Remove any dynamically added "New tool" items
+        toolList.querySelectorAll('.tool-list-item:not([data-tool])').forEach(function(i) { i.remove(); });
+        toolList.querySelectorAll('.tool-list-item').forEach(function(i) { i.classList.remove('active'); });
+        // Select first original tool (Get Order Information)
+        var firstItem = toolList.querySelector('[data-tool="get-order-info"]');
+        if (firstItem) firstItem.classList.add('active');
+        document.getElementById('tool-detail-title').textContent = 'Get Order Information';
+        document.getElementById('tool-detail-desc').textContent = 'With tools you can extend Mim\'s capabilities by giving it the means to interact with systems external to it.';
+        document.getElementById('tool-detail-name').value = 'Get Order Information';
+        document.getElementById('tool-detail-description').value = 'Get order information from Shopify. Requires order number.';
+        document.getElementById('tool-detail-trigger').value = 'Call when the user asks about order tracking or delivery timing. E.g. "where is my order", "can I get the status of my order", "when will my order be delivered?"';
+        document.querySelector('input[name="tool-detail-enable-mode"][value="all"]').checked = true;
+      }
+
+      // Tools Add New dropdown
+      var toolsAddBtn = document.getElementById('tools-add-new-btn');
+      var toolsDropdown = document.getElementById('tools-add-new-dropdown');
+      toolsAddBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toolsDropdown.classList.toggle('open');
+      });
+      document.addEventListener('click', function() {
+        toolsDropdown.classList.remove('open');
+      });
+
+      // Table filtering
+      function setupTableFilter(filterId, tableBodySelector, colIndex) {
+        var filter = document.getElementById(filterId);
+        if (!filter) return;
+        filter.addEventListener('change', function() {
+          var val = filter.value;
+          var rows = document.querySelectorAll(tableBodySelector + ' tr');
+          rows.forEach(function(row) {
+            if (!val) { row.style.display = ''; return; }
+            var cells = row.querySelectorAll('td');
+            if (cells.length > colIndex) {
+              var text = cells[colIndex].textContent.trim();
+              row.style.display = text === val ? '' : 'none';
+            }
+          });
+        });
+      }
+
+      setupTableFilter('ds-table-filter', '#datasources-detail tbody', 1);    // Source column (index 1)
+      setupTableFilter('tools-table-filter', '#tools-table-body', 2);         // Type column (index 2)
+      setupTableFilter('procs-table-filter', '#procedures-detail tbody', 1);  // Status column (index 1)
+
+      var badgeClassMap = { 'Action': 'badge-action', 'Handoff': 'badge-handoff', 'Knowledge': 'badge-knowledge' };
+      var descMap = {
+        'Action': 'With tools you can extend Mim\'s capabilities by giving it the means to interact with systems external to it. With actions you allow it to interact with 3rd party systems like your backend systems (fulfillment systems, ERPs, CRMs , etc.)',
+        'Handoff': 'With tools you can extend Mim\'s capabilities by giving it the means to interact with systems external to it.',
+        'Knowledge': 'With tools you can extend Mim\'s capabilities by giving it the means to interact with systems external to it.'
+      };
+
+      toolsDropdown.querySelectorAll('.dropdown-item').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+          e.stopPropagation();
+          toolsDropdown.classList.remove('open');
+          var type = item.textContent.trim();
+          var badgeClass = badgeClassMap[type];
+
+          // Add new item to top of list
+          var toolList = document.getElementById('tool-list');
+          var newItem = document.createElement('div');
+          newItem.className = 'tool-list-item active';
+          newItem.innerHTML = '<span>New tool</span><span class="badge ' + badgeClass + '">' + type + '</span>';
+
+          // Deselect all, insert at top
+          toolList.querySelectorAll('.tool-list-item').forEach(function(i) { i.classList.remove('active'); });
+          toolList.insertBefore(newItem, toolList.firstChild);
+
+          // Bind click on new item
+          newItem.addEventListener('click', function() {
+            toolList.querySelectorAll('.tool-list-item').forEach(function(i) { i.classList.remove('active'); });
+            newItem.classList.add('active');
+            document.getElementById('tool-detail-title').textContent = newItem.querySelector('span').textContent;
+          });
+
+          // Show blank form
+          document.getElementById('tool-detail-title').textContent = 'New tool';
+          document.getElementById('tool-detail-desc').textContent = descMap[type];
+          document.getElementById('tool-detail-name').value = '';
+          document.getElementById('tool-detail-description').value = '';
+          document.getElementById('tool-detail-trigger').value = '';
+          document.querySelector('input[name="tool-detail-enable-mode"][value="all"]').checked = true;
+        });
+      });
+
+      // Tool list item selection
+      document.querySelectorAll('.tool-list-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+          document.querySelectorAll('.tool-list-item').forEach(function(i) { i.classList.remove('active'); });
+          item.classList.add('active');
+          document.getElementById('tool-detail-title').textContent = item.querySelector('span').textContent;
+        });
+      });
+
+      // Procedure list item selection
+      document.querySelectorAll('.proc-list-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+          document.querySelectorAll('.proc-list-item').forEach(function(i) { i.classList.remove('active'); });
+          item.classList.add('active');
+          document.getElementById('proc-detail-title').textContent = item.textContent;
+        });
+      });
+
+
+    });
+  </script>
+</body>
+</html>
