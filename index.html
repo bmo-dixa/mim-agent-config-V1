@@ -144,6 +144,9 @@
     .content-scrollable {
       flex: 1; overflow-y: auto; padding: 0 32px 32px; min-height: 0;
     }
+    .content-scrollable.no-scroll {
+      overflow: hidden;
+    }
     .breadcrumb {
       font-size: 14px; color: #6b7280; margin-bottom: 16px;
     }
@@ -267,7 +270,7 @@
 
     /* Split panel layout */
     .split-layout {
-      display: flex; height: 100%; overflow: hidden;
+      display: flex; height: calc(100vh - 160px); overflow: hidden;
     }
     .split-left {
       width: 520px; min-width: 520px; overflow-y: auto;
@@ -2079,20 +2082,24 @@ If no tracking → explain and offer alternative assistance</textarea>
 
     document.addEventListener('DOMContentLoaded', function() {
       // Configure / Test tab switching
+      var scrollableEl = document.querySelector('.content-scrollable');
       document.getElementById('tab-configure').addEventListener('click', function() {
         document.getElementById('tab-configure').classList.add('active');
         document.getElementById('tab-test').classList.remove('active');
         document.getElementById('configure-content').style.display = '';
         document.getElementById('test-content').style.display = 'none';
+        scrollableEl.classList.add('no-scroll');
       });
       document.getElementById('tab-test').addEventListener('click', function() {
         document.getElementById('tab-test').classList.add('active');
         document.getElementById('tab-configure').classList.remove('active');
         document.getElementById('configure-content').style.display = 'none';
         document.getElementById('test-content').style.display = 'block';
+        scrollableEl.classList.add('no-scroll');
       });
 
       // Auto-select Identity & Persona on load
+      scrollableEl.classList.add('no-scroll');
       showDetail('identity-card', 'identity-detail');
 
       document.getElementById('identity-card').addEventListener('click', function() {
