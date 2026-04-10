@@ -2086,6 +2086,8 @@ If no tracking → explain and offer alternative assistance</textarea>
         document.getElementById('configure-content').style.display = '';
         document.getElementById('test-content').style.display = 'none';
         scrollableEl.style.overflow = 'auto';
+        scrollableEl.style.display = '';
+        scrollableEl.style.flexDirection = '';
       });
       document.getElementById('tab-test').addEventListener('click', function() {
         document.getElementById('tab-test').classList.add('active');
@@ -2093,6 +2095,8 @@ If no tracking → explain and offer alternative assistance</textarea>
         document.getElementById('configure-content').style.display = 'none';
         document.getElementById('test-content').style.display = 'flex';
         scrollableEl.style.overflow = 'hidden';
+        scrollableEl.style.display = 'flex';
+        scrollableEl.style.flexDirection = 'column';
       });
 
       // Auto-select Identity & Persona on load
